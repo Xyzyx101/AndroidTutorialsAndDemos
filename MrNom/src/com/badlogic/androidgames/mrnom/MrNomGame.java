@@ -7,5 +7,4 @@ public class MrNomGame extends AndroidGame {
 	public Screen getStartScreen() {
 		return new LoadingScreen(this);
 	}
-	
 }
