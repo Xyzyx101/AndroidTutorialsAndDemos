@@ -15,6 +15,18 @@ public class Cube extends Object3d {
 			0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 1, -1, -1, // back bottom right 6
 			0.5f, 0.5f, -0.5f, 1.0f, 0.0f, 1, 1, -1 // back top right 7
 	};
+	static float CubeData4Sided[] = {
+			// x, y, z, u, v nx, ny, nz
+			-0.5f, 0.5f, 0.5f, 0.0f, 0.0f, -1, 1, 1, // front top left 0
+			-0.5f, -0.5f, 0.5f, 0.0f, 1.0f, -1, -1, 1, // front bottom left 1
+			0.5f, -0.5f, 0.5f, 1.0f, 1.0f, 1, -1, 1, // front bottom right 2
+			0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 1, 1, 1, // front top right 3
+
+			-0.5f, 0.5f, -0.5f, 1.0f, 0.0f, -1, 1, -1, // back top left 4
+			-0.5f, -0.5f, -0.5f, 1.0f, 1.0f, -1, -1, -1, // back bottom left 5
+			0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 1, -1, -1, // back bottom right 6
+			0.5f, 0.5f, -0.5f, 0.0f, 0.0f, 1, 1, -1 // back top right 7
+	};
 	static float CubeDataNoTexture[] = {
 			// x, y, z, nx, ny, nz
 			-0.5f, 0.5f, 0.5f, -1, 1, 1, // front top left 0
@@ -35,7 +47,12 @@ public class Cube extends Object3d {
 			5, 6, 1, 6, 2, 1 // Bottom
 	}; // order to draw vertices
 
-	Cube(Context iContext,	MeshEx iMeshEx,	Texture[] iTextures, Material iMaterial, Shader iShader) {
-		super(iContext,	iMeshEx, iTextures, iMaterial, iShader);
+	Cube(
+			Context iContext,
+			MeshEx iMeshEx,
+			Texture[] iTextures,
+			Material iMaterial,
+			Shader iShader) {
+		super(iContext, iMeshEx, iTextures, iMaterial, iShader);
 	}
 }

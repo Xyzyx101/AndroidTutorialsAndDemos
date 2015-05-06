@@ -9,6 +9,10 @@ import android.util.Log;
 
 import java.nio.ShortBuffer;
 
+enum MeshType {
+	Triangles, Lines
+}
+
 public class MeshEx {
 	// Use Indexed Drawing method
 	private FloatBuffer m_VertexBuffer = null; // Holds mesh vertex data
@@ -30,9 +34,21 @@ public class MeshEx {
 	private boolean m_MeshHasUV = false;
 	private boolean m_MeshHasNormals = false;
 
-	public MeshEx(int CoordsPerVertex, int MeshVerticesDataPosOffset,
-			int MeshVerticesUVOffset, int MeshVerticesNormalOffset,
-			float[] Vertices, short[] DrawOrder) {
+	// Collision
+	private Vector3 m_Size = new Vector3(0, 0, 0);
+	private float m_Radius = 0;
+	private float m_RadiusAverage = 0;
+
+	// Mesh Type
+	private MeshType m_MeshType;
+
+	public MeshEx(
+			int CoordsPerVertex,
+			int MeshVerticesDataPosOffset,
+			int MeshVerticesUVOffset,
+			int MeshVerticesNormalOffset,
+			float[] Vertices,
+			short[] DrawOrder) {
 		m_CoordsPerVertex = CoordsPerVertex;
 		m_MeshVerticesDataStrideBytes = m_CoordsPerVertex * FLOAT_SIZE_BYTES;
 		m_MeshVerticesDataPosOffset = MeshVerticesDataPosOffset;
@@ -63,6 +79,101 @@ public class MeshEx {
 
 		// Initialize DrawList Buffer
 		m_DrawListBuffer = ShortBuffer.wrap(DrawOrder);
+
+		// Set Default Mesh type to Triangles
+		m_MeshType = MeshType.Triangles;
+
+		// Calculate Bounding Sphere
+		CalculateRadius();
+	}
+
+	// MeshType
+	void SetMeshType(MeshType Type) {
+		m_MeshType = Type;
+	}
+
+	MeshType GetMeshType() {
+		return m_MeshType;
+	}
+
+	// Collision
+	float GetRadius() {
+		return m_Radius;
+	}
+
+	float GetRadiusAverage() {
+		return m_RadiusAverage;
+	}
+
+	void CalculateRadius() {
+		float XMin = 100000000;
+		float YMin = 100000000;
+		float ZMin = 100000000;
+
+		float XMax = -100000000;
+		float YMax = -100000000;
+		float ZMax = -100000000;
+
+		int ElementPos = m_MeshVerticesDataPosOffset;
+
+		// Loop through all vertices and find min and max values of x,y,z
+		for (int i = 0; i < m_VertexCount; i++) {
+			float x = m_VertexBuffer.get(ElementPos);
+			float y = m_VertexBuffer.get(ElementPos + 1);
+			float z = m_VertexBuffer.get(ElementPos + 2);
+
+			// Test for Min
+			if (x < XMin) {
+				XMin = x;
+			}
+
+			if (y < YMin) {
+				YMin = y;
+			}
+
+			if (z < ZMin) {
+				ZMin = z;
+			}
+
+			// Test for Max
+			if (x > XMax) {
+				XMax = x;
+			}
+
+			if (y > YMax) {
+				YMax = y;
+			}
+
+			if (z > ZMax) {
+				ZMax = z;
+			}
+			ElementPos = ElementPos + m_CoordsPerVertex;
+		}
+
+		// Calculate Size of Mesh in the x,y,z directions
+		m_Size.x = Math.abs(XMax - XMin);
+		m_Size.y = Math.abs(YMax - YMin);
+		m_Size.z = Math.abs(ZMax - ZMin);
+
+		// Calculate Radius
+		float LargestSize = -1;
+		if (m_Size.x > LargestSize) {
+			LargestSize = m_Size.x;
+		}
+
+		if (m_Size.y > LargestSize) {
+			LargestSize = m_Size.y;
+		}
+
+		if (m_Size.z > LargestSize) {
+			LargestSize = m_Size.z;
+		}
+
+		m_Radius = LargestSize / 2.0f;
+
+		// Calculate Average Radius;
+		m_RadiusAverage = (m_Size.x + m_Size.y + m_Size.z) / 3.0f;
+		m_RadiusAverage = m_RadiusAverage / 2.0f;
 	}
 
 	void SetUpMeshArrays(int PosHandle, int TexHandle, int NormalHandle) {
@@ -104,31 +215,33 @@ public class MeshEx {
 			throw new RuntimeException(glOperation + ": glError " + error);
 		}
 	}
-	
-	void DrawMesh(int PosHandle, int TexHandle, int NormalHandle)
-	{
+
+	void DrawMesh(int PosHandle, int TexHandle, int NormalHandle) {
 		SetUpMeshArrays(PosHandle, TexHandle, NormalHandle);
-		 
-		//glDrawElements (int mode, int count, int type, int offset)
-		//glDrawElements (int mode, int count, int type, Buffer indices)
-		GLES20.glDrawElements(GLES20.GL_TRIANGLES, 
-							  m_DrawListBuffer.capacity(),
-							  GLES20.GL_UNSIGNED_SHORT, 
-							  m_DrawListBuffer);
-		
-	    // Disable vertex array
-	    GLES20.glDisableVertexAttribArray(PosHandle);
-	    CheckGLError("glDisableVertexAttribArray ERROR - PosHandle");
-	    
-	    if (m_MeshHasUV)
-	    {
-	    	GLES20.glDisableVertexAttribArray(TexHandle);	
-	    	CheckGLError("glDisableVertexAttribArray ERROR - TexHandle");
-	    }
-	    if (m_MeshHasNormals)
-	    {
-	    	GLES20.glDisableVertexAttribArray(NormalHandle);	
-	    	CheckGLError("glDisableVertexAttribArray ERROR - NormalHandle");
-	    }
+
+		// Draw the either Triangle Mesh or line mesh
+		if (m_MeshType == MeshType.Triangles) {
+			// glDrawElements (int mode, int count, int type, int offset)
+			// glDrawElements (int mode, int count, int type, Buffer indices)
+			GLES20.glDrawElements(GLES20.GL_TRIANGLES,
+					m_DrawListBuffer.capacity(), GLES20.GL_UNSIGNED_SHORT,
+					m_DrawListBuffer);
+		} else if (m_MeshType == MeshType.Lines) {
+			GLES20.glDrawElements(GLES20.GL_LINES, m_DrawListBuffer.capacity(),
+					GLES20.GL_UNSIGNED_SHORT, m_DrawListBuffer);
+		}
+
+		// Disable vertex array
+		GLES20.glDisableVertexAttribArray(PosHandle);
+		CheckGLError("glDisableVertexAttribArray ERROR - PosHandle");
+
+		if (m_MeshHasUV) {
+			GLES20.glDisableVertexAttribArray(TexHandle);
+			CheckGLError("glDisableVertexAttribArray ERROR - TexHandle");
+		}
+		if (m_MeshHasNormals) {
+			GLES20.glDisableVertexAttribArray(NormalHandle);
+			CheckGLError("glDisableVertexAttribArray ERROR - NormalHandle");
+		}
 	}
 }

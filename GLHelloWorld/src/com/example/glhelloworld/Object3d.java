@@ -37,7 +37,21 @@ public class Object3d {
 	private float m_TargetTime = 0;
 	private float m_Counter = 0;
 
-	Object3d(Context iContext, MeshEx iMeshEx, Texture[] iTextures, Material iMaterial, Shader iShader) {
+	// Physics
+	private Physics m_Physics;
+
+	// Gravity Grid
+	private Vector3 m_GridSpotLightColor = new Vector3(0, 1, 0);
+
+	// Is Visible
+	private boolean m_Visible = true;
+
+	Object3d(
+			Context iContext,
+			MeshEx iMeshEx,
+			Texture[] iTextures,
+			Material iMaterial,
+			Shader iShader) {
 		m_Context = iContext;
 		m_MeshEx = iMeshEx;
 		m_Textures = iTextures;
@@ -51,6 +65,9 @@ public class Object3d {
 		}
 
 		m_Orientation = new Orientation(m_Context);
+
+		// Physics
+		m_Physics = new Physics(iContext);
 	}
 
 	public void CheckGLError(String glOperation) {
@@ -61,6 +78,83 @@ public class Object3d {
 							+ GLU.gluErrorString(error));
 			throw new RuntimeException(glOperation + ": glError " + error);
 		}
+	}
+
+	// Visibility
+	void SetVisibility(boolean value) {
+		m_Visible = value;
+	}
+
+	boolean IsVisible() {
+		return m_Visible;
+	}
+
+	// Grid
+	void SetGridSpotLightColor(Vector3 Color) {
+		m_GridSpotLightColor.Set(Color.x, Color.y, Color.z);
+	}
+
+	float[] GetGridSpotLightColor() {
+		return m_GridSpotLightColor.AsFloatArray();
+	}
+
+	// Collision
+	float GetRadius() {
+		// if (m_Mesh != null)
+		// {
+		// return m_Mesh.GetRadius();
+		// }
+
+		if (m_MeshEx != null) {
+			return m_MeshEx.GetRadius();
+		}
+		return -1;
+	}
+
+	float GetScaledRadius() {
+		float LargestScaleFactor = 0;
+		float ScaledRadius = 0;
+		float RawRadius = GetRadius();
+
+		Vector3 ObjectScale = m_Orientation.GetScale();
+
+		if (ObjectScale.x > LargestScaleFactor) {
+			LargestScaleFactor = ObjectScale.x;
+		}
+
+		if (ObjectScale.y > LargestScaleFactor) {
+			LargestScaleFactor = ObjectScale.y;
+		}
+
+		if (ObjectScale.z > LargestScaleFactor) {
+			LargestScaleFactor = ObjectScale.z;
+		}
+
+		ScaledRadius = RawRadius * LargestScaleFactor;
+
+		return ScaledRadius;
+	}
+
+	// Physics
+	Physics GetObjectPhysics() {
+		return m_Physics;
+	}
+
+	void UpdateObjectPhysics() {
+		m_Physics.UpdatePhysicsObject(m_Orientation);
+	}
+
+	void UpdateObject3d() {
+		if (m_Visible) {
+			// Update Object3d Physics
+			UpdateObjectPhysics();
+		}
+
+		// Update Object3d Particle Emitters
+		// UpdatePolyParticleEmitter();
+
+		// Update Explosions associated with this object
+		// UpdateExplosions();
 	}
 
 	boolean SetTexture(int TextureNumber) {
