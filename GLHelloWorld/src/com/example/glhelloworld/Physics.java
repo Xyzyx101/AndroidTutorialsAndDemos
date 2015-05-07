@@ -56,6 +56,55 @@ public class Physics {
 		m_Context = context;
 	}
 
+	// Persistent State
+	// Save/Load Object State
+	void SaveState(String handle) {
+		SharedPreferences settings = m_Context.getSharedPreferences(handle, 0);
+		SharedPreferences.Editor editor = settings.edit();
+
+		// Linear Velocity
+		editor.putFloat("velx", m_Velocity.x);
+		editor.putFloat("vely", m_Velocity.y);
+		editor.putFloat("velz", m_Velocity.z);
+
+		// Linear Acceleration
+		editor.putFloat("ax", m_Acceleration.x);
+		editor.putFloat("ay", m_Acceleration.y);
+		editor.putFloat("az", m_Acceleration.z);
+
+		// Angular velocity
+		editor.putFloat("angularvel", m_AngularVelocity);
+
+		// Angular Acceleration
+		editor.putFloat("angularaccel", m_AngularAcceleration);
+
+		// Commit the edits!
+		editor.commit();
+	}
+
+	void LoadState(String handle) {
+		// Restore preferences
+		SharedPreferences settings = m_Context.getSharedPreferences(handle, 0);
+
+		// Linear Velocity
+		float velx = settings.getFloat("velx", 0);
+		float vely = settings.getFloat("vely", 0);
+		float velz = settings.getFloat("velz", 0);
+		m_Velocity.Set(velx, vely, velz);
+
+		// Linear Acceleration
+		float ax = settings.getFloat("ax", 0);
+		float ay = settings.getFloat("ay", 0);
+		float az = settings.getFloat("az", 0);
+		m_Acceleration.Set(ax, ay, az);
+
+		// Angular velocity
+		m_AngularVelocity = settings.getFloat("angularvel", 0);
+
+		// Angular Acceleration
+		m_AngularAcceleration = settings.getFloat("angularaccel", 0);
+	}
+
 	void ResetState() {
 		// Linear Velocity
 		m_Velocity.Clear();

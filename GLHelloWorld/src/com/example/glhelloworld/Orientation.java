@@ -2,6 +2,7 @@ package com.example.glhelloworld;
 
 import android.opengl.Matrix;
 import android.content.Context;
+import android.content.SharedPreferences;
 
 public class Orientation {
 	private Context m_Context;
@@ -45,6 +46,73 @@ public class Orientation {
 
 		Matrix.setIdentityM(m_OrientationMatrix, 0);
 		Matrix.setIdentityM(m_RotationMatrix, 0);
+	}
+
+	//Persistent Data
+	void SaveState(String handle) {
+		// We need an Editor object to make preference changes.
+		// All objects are from android.context.Context
+		SharedPreferences settings = m_Context.getSharedPreferences(handle, 0);
+		SharedPreferences.Editor editor = settings.edit();
+
+		// Linear Position
+		editor.putFloat("x", m_Position.x);
+		editor.putFloat("y", m_Position.y);
+		editor.putFloat("z", m_Position.z);
+
+		// Rotation Axis
+		editor.putFloat("axisx", m_RotationAxis.x);
+		editor.putFloat("axisy", m_RotationAxis.y);
+		editor.putFloat("axisz", m_RotationAxis.z);
+
+		// Rotation Matrix
+		for (int i = 0; i < 16; i++) {
+			editor.putFloat("rotation" + i, m_RotationMatrix[i]);
+		}
+
+		// Rotation Angle
+		editor.putFloat("rotationangle", m_RotationAngle);
+
+		// Scale
+		editor.putFloat("scalex", m_Scale.x);
+		editor.putFloat("scaley", m_Scale.y);
+		editor.putFloat("scalez", m_Scale.z);
+
+		// Commit the edits!
+		editor.commit();
+	}
+
+	void LoadState(String handle) {
+		// Restore preferences
+		SharedPreferences settings = m_Context.getSharedPreferences(handle, 0);
+
+		// Linear Position
+		float x = settings.getFloat("x", 0);
+		float y = settings.getFloat("y", 0);
+		float z = settings.getFloat("z", 0);
+		m_Position.Set(x, y, z);
+
+		// Rotation Axis
+		float rotx = settings.getFloat("axisx", 0);
+		float roty = settings.getFloat("axisy", 0);
+		float rotz = settings.getFloat("axisz", 0);
+		m_RotationAxis.Set(rotx, roty, rotz);
+
+		// Rotation Matrix
+		for (int i = 0; i < 16; i++) {
+			float data = settings.getFloat("rotation" + i, 1);
+			m_RotationMatrix[i] = data;
+		}
+
+		// Rotation Angle
+		m_RotationAngle = settings.getFloat("rotationangle", 0);
+
+		// Scale
+		float scalex = settings.getFloat("scalex", 1);
+		float scaley = settings.getFloat("scaley", 1);
+		float scalez = settings.getFloat("scalez", 1);
+		m_Scale.Set(scalex, scaley, scalez);
+
 	}
 
 	/***************************** Local Axes **************************************/

@@ -9,7 +9,7 @@ import android.content.Context;
 
 public class MainActivity extends Activity {
 
-	private GLSurfaceView m_GLView;
+	private MyGLSurfaceView m_GLView;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -26,6 +26,9 @@ public class MainActivity extends Activity {
 	protected void onPause() {
 		super.onPause();
     	m_GLView.onPause();
+    	
+    	// Save State
+    	m_GLView.CustomGLRenderer.SaveGameState();
 	}
 
 	@Override

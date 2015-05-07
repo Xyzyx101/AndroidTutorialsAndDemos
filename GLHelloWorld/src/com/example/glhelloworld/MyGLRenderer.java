@@ -12,6 +12,8 @@ import android.util.Log;
 import android.media.AudioManager;
 import android.media.SoundPool;
 
+import android.content.SharedPreferences;
+
 public class MyGLRenderer implements GLSurfaceView.Renderer {
 	private Context m_Context;
 
@@ -56,6 +58,49 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
 
 	public MyGLRenderer(Context context) {
 		m_Context = context;
+	}
+
+	// Persistent State
+	void SaveCubes() {
+		m_Cube.SaveObjectState("Cube1Data");
+		m_Cube2.SaveObjectState("Cube2Data");
+	}
+
+	void LoadCubes() {
+		m_Cube.LoadObjectState("Cube1Data");
+		m_Cube2.LoadObjectState("Cube2Data");
+	}
+
+	void LoadGameState() {
+		// Restore preferences
+		SharedPreferences settings = m_Context.getSharedPreferences(
+				"gamestate", 0);
+
+		int StatePreviouslySaved = settings.getInt("previouslysaved", 0);
+
+		if (StatePreviouslySaved != 0) {
+			// Load in previously saved state
+			m_Score = settings.getInt("score", 0);
+			m_Health = settings.getInt("health", 100);
+
+			LoadCubes();
+		}
+	}
+
+	void SaveGameState() {
+		// We need an Editor object to make preference changes.
+		SharedPreferences settings = m_Context.getSharedPreferences(
+				"gamestate", 0);
+		SharedPreferences.Editor editor = settings.edit();
+
+		editor.putInt("score", m_Score);
+		editor.putInt("health", m_Health);
+
+		SaveCubes();
+		editor.putInt("previouslysaved", 1);
+
+		// Commit the edits!
+		editor.commit();
 	}
 
 	// HUD
@@ -585,6 +630,9 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
 		CreateCharacterSet(m_Context);
 
 		CreateHUD();
+		
+		// Persistent State
+		LoadGameState();
 	}
 
 	@Override

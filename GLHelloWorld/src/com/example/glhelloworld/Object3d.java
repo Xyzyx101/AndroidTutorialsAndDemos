@@ -9,6 +9,8 @@ import android.opengl.GLU;
 
 import android.media.SoundPool;
 
+import android.content.SharedPreferences;
+
 public class Object3d {
 	Orientation m_Orientation = null;
 
@@ -80,6 +82,50 @@ public class Object3d {
 
 		// Physics
 		m_Physics = new Physics(iContext);
+	}
+
+	// Persistent State
+	// Save and Load States of an Object using Shared Preferences.
+	void SaveObjectState(String Handle) {
+		SharedPreferences settings = m_Context.getSharedPreferences(Handle, 0);
+		SharedPreferences.Editor editor = settings.edit();
+
+		// Visible
+		editor.putBoolean("Visible", m_Visible);
+
+		// Commit the edits!
+		editor.commit();
+
+		// Save orientation
+		String OrientationHandle = Handle + "Orientation";
+		m_Orientation.SaveState(OrientationHandle);
+
+		// Save Physics
+		String PhysicsHandle = Handle + "Physics";
+		m_Physics.SaveState(PhysicsHandle);
+
+		// Save Stats
+		// String StatsHandle = Handle + "Stats";
+		// m_ObjectStats.SaveStats(StatsHandle);
+	}
+
+	void LoadObjectState(String Handle) {
+		SharedPreferences settings = m_Context.getSharedPreferences(Handle, 0);
+
+		// Visible
+		m_Visible = settings.getBoolean("Visible", true);
+
+		// Orientation
+		String OrientationHandle = Handle + "Orientation";
+		m_Orientation.LoadState(OrientationHandle);
+
+		// Physics
+		String PhysicsHandle = Handle + "Physics";
+		m_Physics.LoadState(PhysicsHandle);
+
+		// Stats
+		// String StatsHandle = Handle + "Stats";
+		// m_ObjectStats.LoadStats(StatsHandle);
 	}
 
 	public void CheckGLError(String glOperation) {
