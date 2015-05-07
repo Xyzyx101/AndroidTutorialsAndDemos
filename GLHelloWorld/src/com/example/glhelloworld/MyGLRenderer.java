@@ -36,7 +36,7 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
 
 	void CreateGrid(Context iContext) {
 		Vector3 GridColor = new Vector3(0.1f, 0.2f, 0.5f);
-		float GridHeight = -1.5f;
+		float GridHeight = -0.5f;
 		float GridStartZValue = -15; // -20;
 		float GridStartXValue = -15;
 		float GridSpacing = 1.0f;
@@ -124,7 +124,7 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
 
 		// Set Intial Position and Orientation
 		Vector3 Axis = new Vector3(0, 1, 0);
-		Vector3 Position = new Vector3(0.0f, 3.0f, 0.0f);
+		Vector3 Position = new Vector3(0.0f, 2.0f, 0.0f);
 		Vector3 Scale = new Vector3(1.0f, 1.0f, 1.0f);
 
 		m_Cube.m_Orientation.SetPosition(Position);
@@ -139,7 +139,7 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
 		// Set Gravity Grid Parameters
 		Vector3 GridColor = new Vector3(1, 0, 0);
 		m_Cube.SetGridSpotLightColor(GridColor);
-		m_Cube.GetObjectPhysics().SetMassEffectiveRadius(4f);
+		m_Cube.GetObjectPhysics().SetMassEffectiveRadius(6f);
 	}
 
 	void CreateCube2(Context iContext) {
@@ -171,7 +171,7 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
 
 		// Set Intial Position and Orientation
 		Vector3 Axis = new Vector3(0, 1, 0);
-		Vector3 Position = new Vector3(0.0f, 9.0f, 0.0f);
+		Vector3 Position = new Vector3(0.0f, 4.0f, 0.0f);
 		Vector3 Scale = new Vector3(1.0f, 1.0f, 1.0f);
 
 		m_Cube2.m_Orientation.SetPosition(Position);
@@ -186,7 +186,7 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
 		// Set Gravity Grid Parameters
 		Vector3 GridColor = new Vector3(0, 1, 0);
 		m_Cube2.SetGridSpotLightColor(GridColor);
-		m_Cube2.GetObjectPhysics().SetMassEffectiveRadius(4f);
+		m_Cube2.GetObjectPhysics().SetMassEffectiveRadius(6f);
 	}
 
 	void UpdateGravityGrid() { // Clear Masses from Grid from Previous Update
