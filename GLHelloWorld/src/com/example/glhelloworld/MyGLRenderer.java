@@ -7,6 +7,11 @@ import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.content.Context;
 
+import android.util.Log;
+
+import android.media.AudioManager;
+import android.media.SoundPool;
+
 public class MyGLRenderer implements GLSurfaceView.Renderer {
 	private Context m_Context;
 
@@ -30,8 +35,53 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
 	// Gravity Grid
 	private GravityGridEx m_Grid;
 
+	// SFX
+	private SoundPool m_SoundPool;
+	private int m_SoundIndex1;
+	private int m_SoundIndex2;
+	private boolean m_SFXOn = true;
+
 	public MyGLRenderer(Context context) {
 		m_Context = context;
+	}
+
+	// SFX
+	// Sound Pool
+	void CreateSoundPool() {
+		/*
+		 * 
+		 * public SoundPool (int maxStreams, int streamType, int srcQuality)
+		 * 
+		 * Added in API level 1 Constructor. Constructs a SoundPool object with
+		 * the following characteristics:
+		 * 
+		 * Parameters maxStreams the maximum number of simultaneous streams for
+		 * this SoundPool object streamType the audio stream type as described
+		 * in AudioManager For example, game applications will normally use
+		 * STREAM_MUSIC. srcQuality the sample-rate converter quality. Currently
+		 * has no effect. Use 0 for the default.
+		 * 
+		 * Returns a SoundPool object, or null if creation failed
+		 */
+
+		int maxStreams = 10;
+		int streamType = AudioManager.STREAM_MUSIC;
+		int srcQuality = 0;
+
+		m_SoundPool = new SoundPool(maxStreams, streamType, srcQuality);
+
+		if (m_SoundPool == null) {
+			Log.e("RENDERER ",
+					"m_SoundPool creation failure!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+		}
+	}
+
+	void CreateSound(Context iContext) {
+		m_SoundIndex1 = m_Cube.AddSound(m_SoundPool, R.raw.explosion2);
+		m_Cube.SetSFXOnOff(m_SFXOn);
+
+		m_SoundIndex2 = m_Cube2.AddSound(m_SoundPool, R.raw.explosion5);
+		m_Cube2.SetSFXOnOff(m_SFXOn);
 	}
 
 	void CreateGrid(Context iContext) {
@@ -134,7 +184,7 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
 		// Gravity
 		m_Cube.GetObjectPhysics().SetGravity(true);
 
-		//m_Cube.m_Orientation.AddRotation(45);
+		// m_Cube.m_Orientation.AddRotation(45);
 
 		// Set Gravity Grid Parameters
 		Vector3 GridColor = new Vector3(1, 0, 0);
@@ -211,6 +261,10 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
 
 		// Create a new gravity grid
 		CreateGrid(m_Context);
+		
+		// Create SFX
+		CreateSoundPool();
+		CreateSound(m_Context);
 	}
 
 	@Override
@@ -257,6 +311,10 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
 		if ((TypeCollision == Physics.CollisionStatus.COLLISION)
 				|| (TypeCollision == Physics.CollisionStatus.PENETRATING_COLLISION)) {
 			m_Cube.GetObjectPhysics().ApplyLinearImpulse(m_Cube, m_Cube2);
+			
+			// SFX
+			 m_Cube.PlaySound(m_SoundIndex1);
+			 m_Cube2.PlaySound(m_SoundIndex2);
 		}
 
 		// Draw Objects

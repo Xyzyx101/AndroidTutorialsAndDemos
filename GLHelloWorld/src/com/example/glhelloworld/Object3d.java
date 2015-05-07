@@ -7,6 +7,8 @@ import android.util.Log;
 import android.content.Context;
 import android.opengl.GLU;
 
+import android.media.SoundPool;
+
 public class Object3d {
 	Orientation m_Orientation = null;
 
@@ -46,6 +48,12 @@ public class Object3d {
 	// Is Visible
 	private boolean m_Visible = true;
 
+	// Sound
+	private int MAX_SOUNDS = 5;
+	private int m_NumberSounds = 0;
+	private Sound[] m_SoundEffects = new Sound[MAX_SOUNDS];
+	private boolean[] m_SoundEffectsOn = new boolean[MAX_SOUNDS];
+
 	Object3d(
 			Context iContext,
 			MeshEx iMeshEx,
@@ -77,6 +85,47 @@ public class Object3d {
 					glOperation + " IN CHECKGLERROR() : glError "
 							+ GLU.gluErrorString(error));
 			throw new RuntimeException(glOperation + ": glError " + error);
+		}
+	}
+
+	// Sound Effects
+	int AddSound(Sound iSound) {
+		int Index = m_NumberSounds;
+
+		if (m_NumberSounds >= MAX_SOUNDS) {
+			return -1;
+		}
+
+		m_SoundEffects[Index] = iSound;
+		m_NumberSounds++;
+
+		return Index;
+	}
+
+	void SetSFXOnOff(boolean Value) {
+		for (int i = 0; i < m_NumberSounds; i++) {
+			m_SoundEffectsOn[i] = Value;
+		}
+	}
+
+	int AddSound(SoundPool Pool, int ResourceID) {
+		int SoundIndex = -1;
+
+		// Sound SFX = new Sound(m_Context, ResourceID);
+		Sound SFX = new Sound(m_Context, Pool, ResourceID);
+
+		SoundIndex = AddSound(SFX);
+
+		return SoundIndex;
+	}
+
+	void PlaySound(int SoundIndex) {
+		if ((SoundIndex < m_NumberSounds) && (m_SoundEffectsOn[SoundIndex])) {
+			// Play Sound
+			m_SoundEffects[SoundIndex].PlaySound();
+		} else {
+			Log.e("OBJECT3D", "ERROR IN PLAYING SOUND, SOUNDINDEX = "
+					+ SoundIndex);
 		}
 	}
 
