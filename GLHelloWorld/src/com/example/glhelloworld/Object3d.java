@@ -54,6 +54,10 @@ public class Object3d {
 	private Sound[] m_SoundEffects = new Sound[MAX_SOUNDS];
 	private boolean[] m_SoundEffectsOn = new boolean[MAX_SOUNDS];
 
+	// HUD
+	// Blend
+	private boolean m_Blend = false;
+
 	Object3d(
 			Context iContext,
 			MeshEx iMeshEx,
@@ -127,6 +131,16 @@ public class Object3d {
 			Log.e("OBJECT3D", "ERROR IN PLAYING SOUND, SOUNDINDEX = "
 					+ SoundIndex);
 		}
+	}
+
+	// HUD
+	Material GetMaterial() {
+		return m_Material;
+	}
+
+	// Blend
+	void SetBlend(boolean value) {
+		m_Blend = value;
 	}
 
 	// Visibility
@@ -365,7 +379,21 @@ public class Object3d {
 	}
 
 	void DrawObject(Camera Cam, PointLight light) {
-		DrawObject(Cam, light, m_Orientation.GetPosition(),
-				m_Orientation.GetRotationAxis(), m_Orientation.GetScale());
+
+		// HUD
+		if (m_Blend) {
+			GLES20.glEnable(GLES20.GL_BLEND);
+			// GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA,
+			// GLES20.GL_ONE_MINUS_SRC_ALPHA);
+			GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE);
+		}
+		if (m_Visible) {
+			DrawObject(Cam, light, m_Orientation.GetPosition(),
+					m_Orientation.GetRotationAxis(), m_Orientation.GetScale());
+		}
+		// HUD
+		if (m_Blend) {
+			GLES20.glDisable(GLES20.GL_BLEND);
+		}
 	}
 }

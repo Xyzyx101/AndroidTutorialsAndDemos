@@ -90,6 +90,24 @@ public class Orientation {
 		return m_UpWorldVec;
 	}
 
+	Vector3 GetRightWorldCoords() {
+		float[] RightWorld = new float[4];
+		float[] RightLocal = new float[4];
+
+		RightLocal[0] = m_Right.x;
+		RightLocal[1] = m_Right.y;
+		RightLocal[2] = m_Right.z;
+		RightLocal[3] = 1;
+
+		// void multiplyMV (float[] resultVec, int resultVecOffset, float[]
+		// lhsMat, int lhsMatOffset, float[] rhsVec, int rhsVecOffset)
+		Matrix.multiplyMV(RightWorld, 0, m_RotationMatrix, 0, RightLocal, 0);
+		m_RightWorldVec.Set(RightWorld[0], RightWorld[1], RightWorld[2]);
+		m_RightWorldVec.Normalize();
+
+		return m_RightWorldVec;
+	}
+
 	Vector3 GetForwardWorldCoords() {
 		float[] ForwardWorld = new float[4];
 		float[] ForwardLocal = new float[4];

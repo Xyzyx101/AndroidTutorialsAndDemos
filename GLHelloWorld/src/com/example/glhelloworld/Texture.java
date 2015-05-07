@@ -44,7 +44,6 @@ public class Texture {
 				is.close();
 			} catch (IOException e) {
 				Log.e("ERROR - Texture ERROR", "Error in LoadTexture()! ");
-				// Ignore.
 			}
 		}
 	}
@@ -126,7 +125,6 @@ public class Texture {
 	void SetTextureEnvMODE(float value) {
 		// void glTexEnv{if}(GLenum target, GLenum pname, TYPEparam);
 		// void glTexEnv{if}v(GLenum target, GLenum pname, TYPE *param);
-		// //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		// Sets the current texturing function. target must be GL_TEXTURE_ENV.
 		// If pname is GL_TEXTURE_ENV_MODE, param can be
 		// GL_DECAL, GL_REPLACE, GL_MODULATE, or GL_BLEND, to specify how
@@ -139,5 +137,35 @@ public class Texture {
 		// static void glTexEnvf(int target, int pname, float param)
 		GLES10.glTexEnvf(GLES10.GL_TEXTURE_ENV, GLES10.GL_TEXTURE_ENV_MODE,
 				value);
+	}
+
+	// BILLBOARD
+
+	void CopySubTextureToTexture(int Level, int XOffset, int YOffset,
+			Bitmap BitmapImage) {
+		// Copies the texture in BitmapImage to the bitmap associated with this
+		// Texture object
+		/*
+		 * public static void texSubImage2D (int target, int level, int xoffset,
+		 * int yoffset, Bitmap bitmap)
+		 * 
+		 * Added in API level 1 Calls glTexSubImage2D() on the current OpenGL
+		 * context. If no context is current the behavior is the same as calling
+		 * glTexSubImage2D() with no current context, that is, eglGetError()
+		 * will return the appropriate error. Unlike glTexSubImage2D() bitmap
+		 * cannot be null and will raise an exception in that case. All other
+		 * parameters are identical to those used for glTexSubImage2D().
+		 * 
+		 * NOTE: this method doesn't change GL_UNPACK_ALIGNMENT, you must make
+		 * sure to set it properly according to the supplied bitmap. Whether or
+		 * not bitmap can have non power of two dimensions depends on the
+		 * current OpenGL context. Always check glGetError() some time after
+		 * calling this method, just like when using OpenGL directly.
+		 */
+
+		ActivateTexture();
+		GLUtils.texSubImage2D(GLES20.GL_TEXTURE_2D, Level, XOffset, YOffset,
+				BitmapImage);
+		CheckGLError("GLUtils.texSubImage2D");
 	}
 }
