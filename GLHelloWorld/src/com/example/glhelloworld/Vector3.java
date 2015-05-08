@@ -157,4 +157,9 @@ public class Vector3 {
 		y = MinValue + ((MaxValue - MinValue) * tempRandom.nextFloat());
 		z = MinValue + ((MaxValue - MinValue) * tempRandom.nextFloat());
 	}
+
+	// ////////////////////
+	String GetVectorString() {
+		return ("(" + x + "," + y + "," + z + ")");
+	}
 }

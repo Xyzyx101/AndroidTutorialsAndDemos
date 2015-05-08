@@ -24,7 +24,7 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
 	private int m_ViewPortWidth;
 	private int m_ViewPortHeight;
 
-	private Cube m_Cube;
+	private ArenaObject3d m_Cube;
 	private Cube m_Cube2;
 
 	private Vector3 m_CubePositionDelta = new Vector3(0.05f, 0.05f, 0.05f);
@@ -79,6 +79,9 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
 	// Player's Weapon and Ammunition;
 	private Weapon m_Weapon = null;
 	private Sound m_PlayerWeaponSFX = null;
+
+	// Tank
+	private Tank m_Tank;
 
 	public MyGLRenderer(Context context) {
 		m_Context = context;
@@ -319,35 +322,297 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
 		}
 	}
 
+	Weapon CreateWeapon(Context iContext, Vector3 Color, int SoundResourceID,
+			boolean GravityOn, float GravityValue, float AmmunitionRange,
+			float AmmunitionSpeed, Vector3 ScaleAmmo, int AmmoDamageValue) {
+		Weapon NewWeapon = null;
+
+		// Create Cube Shader
+		Shader Shader = new Shader(iContext, R.raw.vsonelightnotexture,
+				R.raw.fsonelightnotexture); // ok
+
+		// Create Debug Local Axis Shader
+		// Shader LocalAxisShader = m_LocalAxisShader; //new Shader(iContext,
+		// R.raw.vslocalaxis, R.raw.fslocalaxis);
+
+		// MeshEx(int CoordsPerVertex,
+		// int MeshVerticesDataPosOffset,
+		// int MeshVerticesUVOffset ,
+		// int MeshVerticesNormalOffset,
+		// float[] Vertices,
+		// short[] DrawOrder
+		// MeshEx CubeMesh = new MeshEx(8,0,3,5,Cube.CubeData,
+		// Cube.CubeDrawOrder);
+		MeshEx CubeMesh = new MeshEx(6, 0, -1, 3, Cube.CubeDataNoTexture,
+				Cube.CubeDrawOrder);
+
+		// Create Material for this object
+		Material Material1 = new Material();
+		Material1.SetEmissive(Color.x, Color.y, Color.z);
+
+		// Create Weapon
+		NewWeapon = new Weapon(iContext, null, null, null, Material1, Shader// ,
+		// LocalAxisShader
+		);
+
+		for (int i = 0; i < NewWeapon.GetMaxAmmunition(); i++) {
+			Ammunition TestAmmo = new Ammunition(iContext, null, CubeMesh,
+					null, Material1, Shader,
+					// LocalAxisShader,
+
+					AmmunitionRange, AmmunitionSpeed);
+
+			// Set Intial Position and Orientation
+			Vector3 Axis = new Vector3(1, 0, 1);
+			// Vector3 Scale = new Vector3(0.2f,0.2f,0.2f);
+
+			TestAmmo.m_Orientation.SetRotationAxis(Axis);
+			TestAmmo.m_Orientation.SetScale(ScaleAmmo);
+			TestAmmo.GetObjectPhysics().SetGravity(GravityOn);
+			TestAmmo.GetObjectPhysics().SetGravityLevel(GravityValue);
+
+			TestAmmo.SetGridSpotLightColor(Color);
+
+			// SFX
+			TestAmmo.CreateFiringSFX(m_SoundPool, SoundResourceID);
+			TestAmmo.SetSFXOnOff(true);
+
+			// Damage Amount
+			TestAmmo.GetObjectStats().SetDamageValue(AmmoDamageValue);
+
+			NewWeapon.LoadAmmunition(TestAmmo, i);
+		}
+
+		return NewWeapon;
+	}
+
+	Weapon CreateTankWeaponType1(Context iContext) {
+		Weapon TankWeapon = null;
+
+		Vector3 AmmoColor = new Vector3(1, 1, 0);
+		int AmmoSoundResourceID = R.raw.clustoid; // R.raw.weapon2;
+		boolean GravityOn = false;
+		float GravityValue = 0;
+
+		float AmmunitionRange = 100;
+		float AmmunitionSpeed = 0.5f;
+
+		Vector3 ScaleAmmo = new Vector3(0.2f, 0.2f, 0.2f);
+
+		int AmmoDamageValue = 2;
+
+		TankWeapon = CreateWeapon(iContext, AmmoColor, AmmoSoundResourceID,
+				GravityOn, GravityValue, AmmunitionRange, AmmunitionSpeed,
+				ScaleAmmo, AmmoDamageValue);
+
+		return TankWeapon;
+	}
+
+	Tank CreateTank(Context iContext, Weapon TankWeapon,
+			Material MainBodyMaterial, int NumberMainBodyTextures,
+			Texture[] MainBodyTexture, boolean AnimateMainBodyTex,
+			float MainBodyAnimationDelay, Mesh MainBodyMesh,
+			MeshEx MainBodyMeshEx, Material TurretMaterial,
+			int NumberTurretTextures, Texture[] TurretTexture,
+			boolean AnimateTurretTex, float TurretAnimationDelay,
+			Mesh TurretMesh, MeshEx TurretMeshEx, Vector3 TurretOffset,
+			Shader iShader,
+			// Shader iLocalAxisShader,
+			SphericalPolygonExplosion Explosion) {
+		Tank NewTank = null;
+
+		// Create Main Tank body
+		Object3d TankMainBody = new Object3d(iContext, MainBodyMesh,
+				MainBodyMeshEx, MainBodyTexture, MainBodyMaterial, iShader// ,
+		// iLocalAxisShader
+		);
+		TankMainBody.SetAnimateTextures(AnimateMainBodyTex,
+				MainBodyAnimationDelay, 0, NumberMainBodyTextures - 1);
+
+		// Create Tank Turret
+		Object3d TankTurret = new Object3d(iContext, TurretMesh, TurretMeshEx,
+				TurretTexture, TurretMaterial, iShader// ,
+		// iLocalAxisShader
+		);
+		TankTurret.SetAnimateTextures(AnimateTurretTex, TurretAnimationDelay,
+				0, NumberTurretTextures - 1);
+
+		// Create new Tank
+		NewTank = new Tank(TankMainBody, TankTurret, TurretOffset);
+
+		// Add Weapon to Tank
+		NewTank.AddWeapon(TankWeapon);
+
+		// Add Explosion to Tank
+		NewTank.GetMainBody().AddExplosion(Explosion);
+
+		return NewTank;
+	}
+
+	Tank CreateInitTank(Context iContext, Weapon TankWeapon,
+			Material MainBodyMaterial, int NumberMainBodyTextures,
+			Texture[] MainBodyTexture, boolean AnimateMainBodyTex,
+			float MainBodyAnimationDelay, Mesh MainBodyMesh,
+			MeshEx MainBodyMeshEx, Material TurretMaterial,
+			int NumberTurretTextures, Texture[] TurretTexture,
+			boolean AnimateTurretTex, float TurretAnimationDelay,
+			Mesh TurretMesh, MeshEx TurretMeshEx,
+			Vector3 TurretOffset,
+			Shader iShader,
+			// Shader iLocalAxisShader,
+			SphericalPolygonExplosion Explosion,
+
+			Vector3 Position, Vector3 ScaleMainBody, Vector3 ScaleTurret,
+			float GroundLevel, Vector3 GridColor, float MassEffectiveRadius,
+			int HitGroundSFX, int ExplosionSFX) {
+		Tank NewTank = null;
+
+		// Create new Tank
+		NewTank = CreateTank(iContext, TankWeapon, MainBodyMaterial,
+				NumberMainBodyTextures, MainBodyTexture, AnimateMainBodyTex,
+				MainBodyAnimationDelay, MainBodyMesh, MainBodyMeshEx,
+				TurretMaterial, NumberTurretTextures, TurretTexture,
+				AnimateTurretTex, TurretAnimationDelay, TurretMesh,
+				TurretMeshEx, TurretOffset, iShader,
+				// iLocalAxisShader,
+				Explosion);
+
+		// Initialize Tank
+
+		// Set Initial Position and Orientation
+		Vector3 Axis = new Vector3(0, 1, 0);
+		NewTank.GetMainBody().m_Orientation.SetPosition(Position);
+		NewTank.GetMainBody().m_Orientation.SetRotationAxis(Axis);
+		NewTank.GetMainBody().m_Orientation.SetScale(ScaleMainBody);
+
+		// Initialize Tank Turret
+		NewTank.GetTurret().m_Orientation.SetScale(ScaleTurret);
+
+		// Physics
+		NewTank.GetMainBody().GetObjectPhysics().SetGravity(true);
+		NewTank.GetMainBody().GetObjectPhysics().SetGroundLevel(GroundLevel);
+
+		// Grid
+		NewTank.GetMainBody().SetGridSpotLightColor(GridColor);
+		NewTank.GetMainBody().GetObjectPhysics()
+				.SetMassEffectiveRadius(MassEffectiveRadius);
+
+		// SFX
+		NewTank.CreateHitGroundSFX(m_SoundPool, HitGroundSFX);
+		NewTank.CreateExplosionSFX(m_SoundPool, ExplosionSFX);
+
+		return NewTank;
+	}
+
 	// Creating the Player's Weapon and Ammo
 	void ProcessCollisions() {
-		Object3d CollisionObj = m_Weapon.CheckAmmoCollision(m_Cube2);
-		if (CollisionObj != null) {
-			CollisionObj.ApplyLinearImpulse(m_Cube2);
-			m_Score = m_Score + m_Cube2.GetObjectStats().GetKillValue();
-		}
+		ProcessCollsionsArenaObjects();
+		ProcessTankCollisions();
+	}
 
-		CollisionObj = m_Weapon.CheckAmmoCollision(m_Cube);
-		if (CollisionObj != null) {
-			CollisionObj.ApplyLinearImpulse(m_Cube);
-			m_Score = m_Score + m_Cube.GetObjectStats().GetKillValue();
-		}
-
+	void ProcessCollsionsArenaObjects() {
 		float ExplosionMinVelocity = 0.02f;
 		float ExplosionMaxVelocity = 0.4f;
 
-		// Check Collision with Cube2
-		Physics.CollisionStatus result = m_Pyramid.CheckCollision(m_Cube2);
+		if (!m_Cube.IsVisible()) {
+			return;
+		}
+
+		// Check Collisons between Cube and Player's Ammunition
+		Object3d CollisionObj = m_Weapon.CheckAmmoCollision(m_Cube);
+		if (CollisionObj != null) {
+			CollisionObj.ApplyLinearImpulse(m_Cube);
+
+			m_Cube.ExplodeObject(ExplosionMaxVelocity, ExplosionMinVelocity);
+			m_Cube.PlayExplosionSFX();
+
+			// Process Damage
+			m_Cube.TakeDamage(CollisionObj);
+			int Health = m_Cube.GetObjectStats().GetHealth();
+			if (Health <= 0) {
+				int KillValue = m_Cube.GetObjectStats().GetKillValue();
+				m_Score = m_Score + KillValue;
+
+				m_Cube.SetVisibility(false);
+			}
+		}
+
+		// Check Collision between Pyramid and Cube
+		Physics.CollisionStatus result = m_Pyramid.CheckCollision(m_Cube);
 		if ((result == Physics.CollisionStatus.COLLISION)
 				|| (result == Physics.CollisionStatus.PENETRATING_COLLISION)) {
 			m_Pyramid.ExplodeObject(ExplosionMaxVelocity, ExplosionMinVelocity);
 			m_Pyramid.PlayExplosionSFX();
-			m_Pyramid.ApplyLinearImpulse(m_Cube2);
+			m_Pyramid.ApplyLinearImpulse(m_Cube);
 
 			// Set Pyramid Velocity and Acceleration to 0
 			m_Pyramid.GetObjectPhysics().ResetState();
 
-			m_Pyramid.TakeDamage(m_Cube2);
+			m_Pyramid.TakeDamage(m_Cube);
+		}
+	}
+
+	void ProcessTankCollisions() {
+		float ExplosionMinVelocity = 0.02f;
+		float ExplosionMaxVelocity = 0.4f;
+
+		if (!m_Tank.GetMainBody().IsVisible()) {
+			return;
+		}
+
+		// Check Collisons between Tank and Player's Ammunition
+		Object3d CollisionObj = m_Weapon.CheckAmmoCollision(m_Tank
+				.GetMainBody());
+		if (CollisionObj != null) {
+			CollisionObj.ApplyLinearImpulse(m_Tank.GetMainBody());
+
+			m_Tank.GetMainBody().ExplodeObject(ExplosionMaxVelocity,
+					ExplosionMinVelocity);
+			m_Tank.PlayExplosionSFX();
+
+			// Process Damage
+			m_Tank.GetMainBody().TakeDamage(CollisionObj);
+			int Health = m_Tank.GetMainBody().GetObjectStats().GetHealth();
+			if (Health <= 0) {
+				int KillValue = m_Tank.GetMainBody().GetObjectStats()
+						.GetKillValue();
+				m_Score = m_Score + KillValue;
+
+				m_Tank.GetMainBody().SetVisibility(false);
+				m_Tank.GetTurret().SetVisibility(false);
+			}
+		}
+
+		// Tank Weapons and Pyramid
+		int NumberWeapons = m_Tank.GetNumberWeapons();
+
+		for (int j = 0; j < NumberWeapons; j++) {
+			CollisionObj = m_Tank.GetWeapon(j).CheckAmmoCollision(m_Pyramid);
+			if (CollisionObj != null) {
+				// hitresult = true;
+				CollisionObj.ApplyLinearImpulse(m_Pyramid);
+
+				// Process Damage
+				m_Pyramid.TakeDamage(CollisionObj);
+
+				// Obj Explosion
+				m_Pyramid.ExplodeObject(ExplosionMaxVelocity,
+						ExplosionMinVelocity);
+				m_Pyramid.PlayExplosionSFX();
+
+				// Set Pyramid Velocity and Acceleration to 0
+				m_Pyramid.GetObjectPhysics().ResetState();
+
+				// SphericalPolygonExplosion Exp = Obj.GetExplosion(0);
+				// if (Exp != null)
+				// {
+				// Exp.StartExplosion(Obj.m_Orientation.GetPosition(),
+				// m_VehicleExplosionMaxVelocity,
+				// m_VehicleExplosionMinVelocity);
+				// //Obj.PlayExplosionSFX();
+				// }
+
+			}
 		}
 	}
 
@@ -848,8 +1113,8 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
 		m_SoundIndex1 = m_Cube.AddSound(m_SoundPool, R.raw.explosion2);
 		m_Cube.SetSFXOnOff(m_SFXOn);
 
-		m_SoundIndex2 = m_Cube2.AddSound(m_SoundPool, R.raw.explosion5);
-		m_Cube2.SetSFXOnOff(m_SFXOn);
+		// m_SoundIndex2 = m_Cube2.AddSound(m_SoundPool, R.raw.explosion5);
+		// m_Cube2.SetSFXOnOff(m_SFXOn);
 	}
 
 	void CreateGrid(Context iContext) {
@@ -938,7 +1203,14 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
 		Texture[] CubeTex = new Texture[1];
 		CubeTex[0] = TexAndroid;
 
-		m_Cube = new Cube(iContext, null, CubeMesh, CubeTex, Material1, Shader);
+		float XMaxBoundary = m_Grid.GetXMaxBoundary();
+		float XMinBoundary = m_Grid.GetXMinBoundary();
+		float ZMaxBoundary = m_Grid.GetZMaxBoundary();
+		float ZMinBoundary = m_Grid.GetZMinBoundary();
+
+		m_Cube = new ArenaObject3d(iContext, null, CubeMesh, CubeTex,
+				Material1, Shader, XMaxBoundary, XMinBoundary, ZMaxBoundary,
+				ZMinBoundary);
 
 		// Set Initial Position and Orientation
 		Vector3 Axis = new Vector3(0, 1, 0);
@@ -1008,12 +1280,217 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
 	}
 
 	void UpdateGravityGrid() { // Clear Masses from Grid from Previous Update
+		int NumberMasses = 0;
+		Object3d[] Masses = new Object3d[50];
+
 		// Clear Masses from Grid from Previous Update
 		m_Grid.ResetGrid();
 
 		// Add Cubes to Grid
-		m_Grid.AddMass(m_Cube);
-		m_Grid.AddMass(m_Cube2);
+
+		if (m_Cube.IsVisible()) {
+			m_Grid.AddMass(m_Cube);
+		}
+
+		if (m_Tank.GetMainBody().IsVisible()) {
+			m_Grid.AddMass(m_Tank.GetMainBody());
+			NumberMasses = m_Tank.GetWeapon(0).GetActiveAmmo(0, Masses);
+			m_Grid.AddMasses(NumberMasses, Masses);
+		}
+
+		// Add Player Weapon Rounds
+		NumberMasses = m_Weapon.GetActiveAmmo(0, Masses);
+		m_Grid.AddMasses(NumberMasses, Masses);
+
+		// Add Player Pyramid
+		m_Grid.AddMass(m_Pyramid);
+	}
+
+	Tank CreateTankType1(Context iContext) {
+		// Weapon
+		Weapon TankWeapon = CreateTankWeaponType1(iContext);
+
+		// MainBody
+
+		// Material
+		Material MainBodyMaterial = new Material();
+		MainBodyMaterial.SetEmissive(0.0f, 0.4f, 0.0f);
+		// MainBodyMaterial.SetGlowAnimation(true);
+		// MainBodyMaterial.GetEmissiveMax().Set(0, 0.5f, 0);
+		// MainBodyMaterial.GetEmissiveMin().Set(0, 0, 0);
+
+		// Texture
+		Texture TexTankMainBody = new Texture(iContext, R.drawable.ship1);
+		int NumberMainBodyTextures = 1;
+		Texture[] MainBodyTexture = new Texture[NumberMainBodyTextures];
+		MainBodyTexture[0] = TexTankMainBody;
+		boolean AnimateMainBodyTex = false;
+		float MainBodyAnimationDelay = 0;
+
+		// Mesh
+		Mesh MainBodyMesh = new Mesh(8, 0, 3, 5, Pyramid2.Pyramid2Vertices);
+		MeshEx MainBodyMeshEx = null;
+
+		// Turret
+
+		// Material
+		Material TurretMaterial = new Material();
+		TurretMaterial.SetEmissive(0.4f, 0.0f, 0.0f);
+		// TurretMaterial.SetGlowAnimation(true);
+		// TurretMaterial.GetEmissiveMax().Set(0.5f, 0.0f, 0);
+		// /TurretMaterial.GetEmissiveMin().Set(0, 0, 0);
+
+		// Texture
+		Texture TexTankTurret = new Texture(iContext, R.drawable.ship1);
+		int NumberTurretTextures = 1;
+		Texture[] TurretTexture = new Texture[NumberTurretTextures];
+		TurretTexture[0] = TexTankTurret;
+		boolean AnimateTurretTex = false;
+		float TurretAnimationDelay = 0;
+
+		// Mesh
+		Mesh TurretMesh = new Mesh(8, 0, 3, 5, Pyramid2.Pyramid2Vertices);
+		MeshEx TurretMeshEx = null;
+
+		// Turret Offset
+		Vector3 TurretOffset = new Vector3(0, 0.2f, -0.3f);
+
+		// Shaders
+		Shader iShader = new Shader(iContext, R.raw.vsonelight,
+				R.raw.fsonelight); // ok
+		// Shader iLocalAxisShader = new Shader(iContext, R.raw.vslocalaxis,
+		// R.raw.fslocalaxis);
+
+		// Initilization
+		Vector3 Position = new Vector3(-2.0f, 7.0f, 2.0f);
+		Vector3 ScaleTurret = new Vector3(1.5f / 2.0f, 0.5f / 2.0f, 1.3f / 2.0f);
+		Vector3 ScaleMainBody = new Vector3(1, 0.5f / 2.0f, 1);
+
+		float GroundLevel = 0.0f;
+		Vector3 GridColor = new Vector3(0.0f, 1.0f, 0.0f);
+		float MassEffectiveRadius = 7.0f;
+		int HitGroundSFX = R.raw.explosion2;
+		int ExplosionSFX = R.raw.explosion1;
+
+		// Create Explosion
+		int NumberParticles = 20;
+		Vector3 Color = new Vector3(0, 0, 1);
+		long ParticleLifeSpan = 3000;
+		boolean RandomColors = false;
+		boolean ColorAnimation = true;
+		float FadeDelta = 0.001f;
+		Vector3 ParticleSize = new Vector3(0.5f, 0.5f, 0.5f);
+
+		SphericalPolygonExplosion Explosion = CreateExplosion(iContext,
+				NumberParticles, Color, ParticleSize, ParticleLifeSpan,
+				RandomColors, ColorAnimation, FadeDelta);
+
+		Tank TankType1 = CreateInitTank(iContext, TankWeapon, MainBodyMaterial,
+				NumberMainBodyTextures, MainBodyTexture, AnimateMainBodyTex,
+				MainBodyAnimationDelay, MainBodyMesh, MainBodyMeshEx,
+				TurretMaterial, NumberTurretTextures, TurretTexture,
+				AnimateTurretTex, TurretAnimationDelay, TurretMesh,
+				TurretMeshEx, TurretOffset, iShader,
+				// iLocalAxisShader,
+				Explosion,
+
+				Position, ScaleMainBody, ScaleTurret, GroundLevel, GridColor,
+				MassEffectiveRadius, HitGroundSFX, ExplosionSFX);
+
+		TankType1.GetMainBody().SetSFXOnOff(true);
+		TankType1.GetTurret().SetSFXOnOff(true);
+
+		return TankType1;
+	}
+
+	int GenerateTankWayPoints(Vector3[] WayPoints) {
+		int NumberWayPoints = 4;
+
+		WayPoints[0] = new Vector3(5, 0, 10);
+		WayPoints[1] = new Vector3(10, 0, -10);
+		WayPoints[2] = new Vector3(-10, 0, -10);
+		WayPoints[3] = new Vector3(-5, 0, 10);
+
+		return NumberWayPoints;
+	}
+
+	// Tank
+	VehicleCommand CreatePatrolAttackTankCommand(
+			AIVehicleObjectsAffected ObjectsAffected, int NumberWayPoints,
+			Vector3[] WayPoints, Vector3 Target, Object3d TargetObj,
+			int NumberRoundToFire, int FiringDelay) {
+		VehicleCommand TankCommand = null;
+
+		AIVehicleCommand Command = AIVehicleCommand.Patrol;
+
+		int NumberObjectsAffected = 0;
+		int DeltaAmount = NumberRoundToFire;
+		int DeltaIncrement = FiringDelay;
+
+		int MaxValue = 0;
+		int MinValue = 0;
+
+		TankCommand = new VehicleCommand(m_Context, Command, ObjectsAffected,
+				NumberObjectsAffected, DeltaAmount, DeltaIncrement, MaxValue,
+				MinValue, NumberWayPoints, WayPoints, Target, TargetObj);
+
+		return TankCommand;
+	}
+
+	void CreateTanks() {
+
+		m_Tank = CreateTankType1(m_Context);
+
+		// Set Material
+		m_Tank.GetMainBody().GetMaterial().SetEmissive(0.0f, 0.5f, 0f);
+		m_Tank.GetTurret().GetMaterial().SetEmissive(0.5f, 0, 0.0f);
+
+		// Tank ID
+		m_Tank.SetVehicleID("tank1");
+
+		// Set Patrol Order
+		int MAX_WAYPOINTS = 10;
+		Vector3[] WayPoints = new Vector3[MAX_WAYPOINTS];
+		int NumberWayPoints = GenerateTankWayPoints(WayPoints);
+		AIVehicleObjectsAffected ObjectsAffected = AIVehicleObjectsAffected.PrimaryWeapon;
+		Vector3 Target = new Vector3(0, 0, 0);
+		Object3d TargetObj = null;
+		int NumberRoundToFire = 3;
+		int FiringDelay = 5000;
+
+		VehicleCommand Command = CreatePatrolAttackTankCommand(ObjectsAffected,
+				NumberWayPoints, WayPoints, Target, TargetObj,
+				NumberRoundToFire, FiringDelay);
+
+		m_Tank.GetDriver().SetOrder(Command);
+
+	}
+
+	SphericalPolygonExplosion CreateExplosion(Context iContext,
+			int NumberParticles, Vector3 Color, Vector3 ParticleSize,
+			long ParticleLifeSpan, boolean RandomColors,
+			boolean ColorAnimation, float FadeDelta) {
+		SphericalPolygonExplosion Explosion = null;
+
+		// No textures
+		Mesh PolyParticleMesh = new Mesh(6, 0, -1, 3,
+				PolyParticleEx.PolyParticleVertices);
+
+		// Create Material for this object
+		Material Material2 = new Material();
+		Material2.SetSpecular(0, 0, 0);
+
+		// Shader LocalAxisShader = m_LocalAxisShader; //new Shader(iContext,
+		// R.raw.vslocalaxis, R.raw.fslocalaxis);
+		Shader Shader2 = new Shader(iContext, R.raw.vsonelightnotexture,
+				R.raw.fsonelightnotexture);
+
+		Explosion = new SphericalPolygonExplosion(NumberParticles, Color,
+				ParticleLifeSpan, RandomColors, ColorAnimation, FadeDelta,
+				ParticleSize,
+
+				iContext, PolyParticleMesh, null, null, Material2, Shader2);
+		return Explosion;
 	}
 
 	@Override
@@ -1021,18 +1498,18 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
 		m_PointLight = new PointLight(m_Context);
 		SetupLights();
 
-		// Create a 3d Cube
-		CreateCube(m_Context);
-
-		// Create a Second Cube
-		CreateCube2(m_Context);
+		// Create SFX
+		CreateSoundPool();
+		// CreateSound(m_Context);
 
 		// Create a new gravity grid
 		CreateGrid(m_Context);
 
-		// Create SFX
-		CreateSoundPool();
-		CreateSound(m_Context);
+		// Create a 3d Cube
+		CreateCube(m_Context);
+
+		// Create a Second Cube
+		// CreateCube2(m_Context);
 
 		// Create HUD
 		// Get Width and Height of surface
@@ -1047,7 +1524,7 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
 		CreateHUD();
 
 		// Persistent State
-		LoadGameState();
+		// LoadGameState();
 
 		// Create Weapon
 		CreateWeapon(m_Context);
@@ -1055,6 +1532,9 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
 
 		// Create Player's Graphic
 		CreatePyramid(m_Context);
+
+		// Create The Tanks
+		CreateTanks();
 	}
 
 	@Override
@@ -1084,45 +1564,14 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
 
 		// Update Object Physics
 		// Cube1
-		m_Cube.UpdateObject3d();
-		boolean HitGround = m_Cube.GetObjectPhysics().GetHitGroundStatus();
-		if (HitGround) {
-			// m_Cube.SetVisibility(false);
-			m_Cube.GetObjectPhysics().ApplyTranslationalForce(m_Force1);
-			m_Cube.GetObjectPhysics().ApplyRotationalForce(m_RotationalForce,
-					7.0f);
-			m_Cube2.GetObjectPhysics().ApplyRotationalForce(-m_RotationalForce,
-					3.0f);
-			m_Cube.GetObjectPhysics().ClearHitGroundStatus();
-		}
+		m_Cube.UpdateArenaObject();
 
-		// Cube2
-		m_Cube2.UpdateObject3d();
-
-		// Process Collisions
-
-		Physics.CollisionStatus TypeCollision = m_Cube.GetObjectPhysics()
-				.CheckForCollisionSphereBounding(m_Cube, m_Cube2);
-
-		if ((TypeCollision == Physics.CollisionStatus.COLLISION)
-				|| (TypeCollision == Physics.CollisionStatus.PENETRATING_COLLISION)) {
-			m_Cube.GetObjectPhysics().ApplyLinearImpulse(m_Cube, m_Cube2);
-
-			// SFX
-			m_Cube.PlaySound(m_SoundIndex1);
-			m_Cube2.PlaySound(m_SoundIndex2);
-
-			// HUD
-			m_Health = m_Health - 1;
-			if (m_Health < 0) {
-				m_Health = 100;
-			}
-			m_Score = m_Score + 10;
-		}
+		// Update Tanks
+		m_Tank.UpdateVehicle();
 
 		// Draw Objects
-		m_Cube.DrawObject(m_Camera, m_PointLight);
-		m_Cube2.DrawObject(m_Camera, m_PointLight);
+		m_Cube.RenderArenaObject(m_Camera, m_PointLight);
+		m_Tank.RenderVehicle(m_Camera, m_PointLight, false);
 
 		// Update and Draw Grid
 		UpdateGravityGrid();

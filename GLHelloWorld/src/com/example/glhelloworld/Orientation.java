@@ -48,6 +48,36 @@ public class Orientation {
 		Matrix.setIdentityM(m_RotationMatrix, 0);
 	}
 
+	public Orientation(Orientation Source) {
+		m_Context = Source.m_Context;
+
+		// Local Axes
+		m_Right = new Vector3(Source.m_Right);
+		m_Up = new Vector3(Source.m_Up);
+		;
+		m_Forward = new Vector3(Source.m_Forward);
+
+		// Position, angle of rotation in degrees, and scale of an Object
+		m_Position = new Vector3(Source.m_Position);
+		m_RotationAngle = Source.m_RotationAngle;
+		m_RotationAxis = new Vector3(Source.m_RotationAxis);
+		m_Scale = new Vector3(Source.m_Scale);
+
+		// Orientation Matrices
+		m_OrientationMatrix = Source.m_OrientationMatrix.clone();
+		m_PositionMatrix = Source.m_PositionMatrix.clone();
+		m_RotationMatrix = Source.m_RotationMatrix.clone();
+		m_ScaleMatrix = Source.m_ScaleMatrix.clone();
+
+		// Debug Local Axis Graphics
+		// m_Shader = Source.m_Shader;
+		// m_VertexBufferLocalAxis = Source.m_VertexBufferLocalAxis;
+
+		m_UpWorldVec = new Vector3(Source.m_UpWorldVec);
+		m_RightWorldVec = new Vector3(Source.m_RightWorldVec);
+		m_ForwardWorldVec = new Vector3(Source.m_ForwardWorldVec);
+	}
+
 	// Persistent Data
 	void SaveState(String handle) {
 		// We need an Editor object to make preference changes.

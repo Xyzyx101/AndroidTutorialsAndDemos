@@ -52,6 +52,9 @@ public class Physics {
 	private Vector3 m_CollisionNormal;
 	private Vector3 m_RelativeVelocity;
 
+	// Vehicles
+	private float m_MaxSpeed = 0.20f;
+
 	Physics(Context context) {
 		m_Context = context;
 	}
@@ -173,6 +176,10 @@ public class Physics {
 	}
 
 	// ************Set Functions**************************
+	void SetMaxSpeed(float Speed) {
+		m_MaxSpeed = Speed;
+	}
+
 	void SetMaximumVelocity(Vector3 v) {
 		m_MaxVelocity = v;
 	}
@@ -209,7 +216,7 @@ public class Physics {
 		m_MassEffectiveRadius = value;
 	}
 
-	// *************Apply Force Functinos*********************************
+	// *************Apply Force Functions*********************************
 
 	/*
 	 * Apply a force to the object F = ma F/m = a 1. Calculate translational
@@ -336,6 +343,84 @@ public class Physics {
 	}
 
 	/*************** Update Physics Object Along Heading **************/
+	void UpdatePhysicsObjectHeading(Vector3 Heading, Orientation orientation) {
+		// Adjust for Gravity
+		if (m_ApplyGravity) {
+			ApplyGravityToObject();
+		}
+
+		// 1. Update Linear Velocity
+		// ///////////////////////////////////////////////////////////////////////////
+		m_Acceleration.x = TestSetLimitValue(m_Acceleration.x,
+				m_MaxAcceleration.x);
+		m_Acceleration.y = TestSetLimitValue(m_Acceleration.y,
+				m_MaxAcceleration.y);
+		m_Acceleration.z = TestSetLimitValue(m_Acceleration.z,
+				m_MaxAcceleration.z);
+
+		m_Velocity.Add(m_Acceleration);
+		m_Velocity.x = TestSetLimitValue(m_Velocity.x, m_MaxVelocity.x);
+		m_Velocity.y = TestSetLimitValue(m_Velocity.y, m_MaxVelocity.y);
+		m_Velocity.z = TestSetLimitValue(m_Velocity.z, m_MaxVelocity.z);
+
+		// 2. Update Angular Velocity
+		// ///////////////////////////////////////////////////////////////////////////////
+		m_AngularAcceleration = TestSetLimitValue(m_AngularAcceleration,
+				m_MaxAngularAcceleration);
+
+		m_AngularVelocity += m_AngularAcceleration;
+		m_AngularVelocity = TestSetLimitValue(m_AngularVelocity,
+				m_MaxAngularVelocity);
+
+		// 3. Reset Forces acting on Object
+		// Rebuild forces acting on object for each update
+		// //////////////////////////////////////////////////////////////////////////////
+		m_Acceleration.Clear();
+		m_AngularAcceleration = 0;
+
+		// 4. Adjust Velocity so that all the velocity is redirected along the
+		// heading.
+		// ////////////////////////////////////////////////////////////////////////////////
+		float VelocityMagnitude = m_Velocity.Length();
+
+		if (VelocityMagnitude > m_MaxSpeed) {
+			VelocityMagnitude = m_MaxSpeed;
+		}
+
+		Vector3 NewVelocity = new Vector3(Heading);
+		NewVelocity.Normalize();
+		NewVelocity.Multiply(VelocityMagnitude);
+
+		Vector3 OldVelocity = new Vector3(m_Velocity);
+
+		if (m_ApplyGravity) {
+			m_Velocity.Set(NewVelocity.x, OldVelocity.y, NewVelocity.z);
+		} else {
+			m_Velocity.Set(NewVelocity.x, NewVelocity.y, NewVelocity.z);
+		}
+
+		// 5. Update Object Linear Position
+		// //////////////////////////////////////////////////////////////////////////////
+		Vector3 pos = orientation.GetPosition();
+		pos.Add(m_Velocity);
+		orientation.SetPosition(pos);
+
+		// Check for object hitting ground if gravity is on.
+		if (m_ApplyGravity) {
+			if ((pos.y < m_GroundLevel) && (m_Velocity.y < 0)) {
+				if (Math.abs(m_Velocity.y) > Math.abs(m_Gravity)) {
+					m_JustHitGround = true;
+				}
+				pos.y = m_GroundLevel;
+				m_Velocity.y = 0;
+			}
+		}
+
+		// 6. Update Object Angular Position
+		// //////////////////////////////////////////////////////////////////////////////
+		// Add Rotation to Rotation Matrix
+		orientation.AddRotation(m_AngularVelocity);
+	}
 
 	CollisionStatus CheckForCollisionSphereBounding(Object3d body1,
 			Object3d body2) {

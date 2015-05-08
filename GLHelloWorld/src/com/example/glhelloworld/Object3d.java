@@ -97,6 +97,10 @@ public class Object3d {
 		m_ObjectStats = new Stats(iContext);
 	}
 
+	Context GetContext() {
+		return m_Context;
+	}
+
 	// Explosions
 	SphericalPolygonExplosion GetExplosion(int index) {
 		if (index >= MAX_EXPLOSIONS) {
@@ -335,6 +339,20 @@ public class Object3d {
 		if (m_Visible) {
 			// Update Object3d Physics
 			UpdateObjectPhysics();
+		}
+
+		// Update Object3d Particle Emitters
+		// UpdatePolyParticleEmitter();
+
+		// Update Explosions associated with this object
+		UpdateExplosions();
+	}
+
+	// Vehicles
+	void UpdateObject3dToHeading(Vector3 Heading) {
+		if (m_Visible) {
+			// Update Object3d Physics
+			m_Physics.UpdatePhysicsObjectHeading(Heading, m_Orientation);
 		}
 
 		// Update Object3d Particle Emitters
