@@ -3,6 +3,7 @@ package com.example.glhelloworld;
 import android.app.Activity;
 import android.os.Bundle;
 import android.view.Menu;
+import android.view.MotionEvent;
 
 import android.opengl.GLSurfaceView;
 import android.content.Context;
@@ -25,10 +26,10 @@ public class MainActivity extends Activity {
 	@Override
 	protected void onPause() {
 		super.onPause();
-    	m_GLView.onPause();
-    	
-    	// Save State
-    	m_GLView.CustomGLRenderer.SaveGameState();
+		m_GLView.onPause();
+
+		// Save State
+		m_GLView.CustomGLRenderer.SaveGameState();
 	}
 
 	@Override
@@ -51,6 +52,15 @@ class MyGLSurfaceView extends GLSurfaceView {
 
 	public MyGLRenderer CustomGLRenderer = null;
 
+	private float m_PreviousX = 0;
+	private float m_PreviousY = 0;
+
+	private float m_dx = 0;
+	private float m_dy = 0;
+
+	private float m_Startx = 0;
+	private float m_Starty = 0;
+
 	public MyGLSurfaceView(Context context) {
 		super(context);
 
@@ -63,5 +73,37 @@ class MyGLSurfaceView extends GLSurfaceView {
 
 		CustomGLRenderer = new MyGLRenderer(context);
 		setRenderer(CustomGLRenderer);
+	}
+
+	@Override
+	public boolean onTouchEvent(MotionEvent e) {
+		// MotionEvent reports input details from the touch screen
+		// and other input controls. In this case, you are only
+		// interested in events where the touch position changed.
+
+		float x = e.getX();
+		float y = e.getY();
+
+		switch (e.getAction()) {
+		case MotionEvent.ACTION_DOWN:
+			m_Startx = x;
+			m_Starty = y;
+			break;
+
+		case MotionEvent.ACTION_UP:
+			CustomGLRenderer.ProcessTouch(m_Startx, m_Starty, x, y);
+			break;
+
+		case MotionEvent.ACTION_MOVE:
+			m_dx = x - m_PreviousX;
+			m_dy = y - m_PreviousY;
+
+			CustomGLRenderer.CameraMoved(m_dy, m_dx);
+			break;
+		}
+
+		m_PreviousX = x;
+		m_PreviousY = y;
+		return true;
 	}
 }

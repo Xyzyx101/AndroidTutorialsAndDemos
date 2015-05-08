@@ -9,6 +9,12 @@ public class Material {
 	private float m_Specular_Shininess = 5.0f;
 	private float m_Alpha = 1.0f;
 
+	// Glow Animation
+	private boolean m_GlowAnimation = false;
+	private Vector3 m_EmissiveMax = new Vector3(1, 1, 1);
+	private Vector3 m_EmissiveMin = new Vector3(0, 0, 0);
+	private Vector3 m_EmissiveDelta = new Vector3(0.1f, 0.1f, 0.1f);
+
 	public Material() {
 		m_Emissive[0] = 0;
 		m_Emissive[1] = 0;
@@ -30,8 +36,13 @@ public class Material {
 		m_Alpha = 1;
 	}
 
-	public Material(float[] iEmissive, float[] iAmbient, float[] iDiffuse,
-			float[] iSpecular, float iSpecShininess, float iAlpha) {
+	public Material(
+			float[] iEmissive,
+			float[] iAmbient,
+			float[] iDiffuse,
+			float[] iSpecular,
+			float iSpecShininess,
+			float iAlpha) {
 
 		m_Emissive[0] = iEmissive[0];
 		m_Emissive[1] = iEmissive[1];
@@ -114,5 +125,68 @@ public class Material {
 
 	float GetAlpha() {
 		return m_Alpha;
+	}
+
+	void SetGlowAnimation(boolean value) {
+		m_GlowAnimation = value;
+	}
+
+	boolean DoGlowAnimation() {
+		return m_GlowAnimation;
+	}
+
+	Vector3 GetEmissiveMax() {
+		return m_EmissiveMax;
+	}
+
+	Vector3 GetEmissiveMin() {
+		return m_EmissiveMin;
+	}
+
+	Vector3 GetEmissiveDelta() {
+		return m_EmissiveDelta;
+	}
+
+	void UpdateGlowAnimation() {
+		// Update Scale of object based on scale delta
+		m_Emissive[0] = m_Emissive[0] + m_EmissiveDelta.x;
+		m_Emissive[1] = m_Emissive[1] + m_EmissiveDelta.y;
+		m_Emissive[2] = m_Emissive[2] + m_EmissiveDelta.z;
+
+		// Check and set bounds for x,y,z scales if needed and reverse delta if
+		// those bounds are exceeded.
+		// red
+		if (m_Emissive[0] > m_EmissiveMax.x) {
+			m_Emissive[0] = m_EmissiveMax.x;
+			m_EmissiveDelta.x = -m_EmissiveDelta.x;
+		} else if (m_Emissive[0] < m_EmissiveMin.x) {
+			m_Emissive[0] = m_EmissiveMin.x;
+			m_EmissiveDelta.x = -m_EmissiveDelta.x;
+		}
+
+		// green
+		if (m_Emissive[1] > m_EmissiveMax.y) {
+			m_Emissive[1] = m_EmissiveMax.y;
+			m_EmissiveDelta.y = -m_EmissiveDelta.y;
+		} else if (m_Emissive[1] < m_EmissiveMin.y) {
+			m_Emissive[1] = m_EmissiveMin.y;
+			m_EmissiveDelta.y = -m_EmissiveDelta.y;
+		}
+
+		// blue
+		if (m_Emissive[2] > m_EmissiveMax.z) {
+			m_Emissive[2] = m_EmissiveMax.z;
+			m_EmissiveDelta.z = -m_EmissiveDelta.z;
+		} else if (m_Emissive[2] < m_EmissiveMin.z) {
+			m_Emissive[2] = m_EmissiveMin.z;
+			m_EmissiveDelta.z = -m_EmissiveDelta.z;
+		}
+
+		// m_Diffuse[0] = m_Emissive[0];
+		// m_Diffuse[1] = m_Emissive[1];
+		// m_Diffuse[2] = m_Emissive[2];
+
+		// m_Specular[0] = m_Specular[0] * m_Emissive[0];
+
 	}
 }

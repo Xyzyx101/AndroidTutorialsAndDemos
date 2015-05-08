@@ -8,13 +8,14 @@ public class BillBoardFont extends BillBoard {
 
 	BillBoardFont(
 			Context iContext,
+			Mesh iMesh,
 			MeshEx iMeshEx,
 			Texture[] iTextures,
 			Material iMaterial,
 			Shader iShader,
 
 			char Character) {
-		super(iContext, iMeshEx, iTextures, iMaterial, iShader);
+		super(iContext, iMesh, iMeshEx, iTextures, iMaterial, iShader);
 
 		m_Character = Character;
 	}

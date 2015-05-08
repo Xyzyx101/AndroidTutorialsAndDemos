@@ -15,7 +15,7 @@ public class Object3d {
 	Orientation m_Orientation = null;
 
 	private Context m_Context = null;
-	// private Mesh m_Mesh = null;
+	private Mesh m_Mesh = null;
 	private MeshEx m_MeshEx = null;
 	private Texture[] m_Textures = null;
 	private Material m_Material = null;
@@ -60,13 +60,23 @@ public class Object3d {
 	// Blend
 	private boolean m_Blend = false;
 
+	// Persistent Data
+	private Stats m_ObjectStats;
+
+	// Explosions
+	private int MAX_EXPLOSIONS = 3;
+	private int m_NumberExplosions = 0;
+	private SphericalPolygonExplosion[] m_Explosions = new SphericalPolygonExplosion[MAX_EXPLOSIONS];
+
 	Object3d(
 			Context iContext,
+			Mesh iMesh,
 			MeshEx iMeshEx,
 			Texture[] iTextures,
 			Material iMaterial,
 			Shader iShader) {
 		m_Context = iContext;
+		m_Mesh = iMesh;
 		m_MeshEx = iMeshEx;
 		m_Textures = iTextures;
 		m_Material = iMaterial;
@@ -82,6 +92,75 @@ public class Object3d {
 
 		// Physics
 		m_Physics = new Physics(iContext);
+
+		// Initialize Object Stats
+		m_ObjectStats = new Stats(iContext);
+	}
+
+	// Explosions
+	SphericalPolygonExplosion GetExplosion(int index) {
+		if (index >= MAX_EXPLOSIONS) {
+			return null;
+		}
+		return m_Explosions[index];
+	}
+
+	int AddExplosion(SphericalPolygonExplosion Explosion) {
+		if (m_NumberExplosions >= MAX_EXPLOSIONS) {
+			return -1;
+		}
+		m_NumberExplosions++;
+		int index = m_NumberExplosions - 1;
+		m_Explosions[index] = Explosion;
+		return index;
+	}
+
+	void RenderExplosions(Camera Cam, PointLight light) {
+		for (int i = 0; i < m_NumberExplosions; i++) {
+			m_Explosions[i].RenderExplosion(Cam, light);
+		}
+	}
+
+	void UpdateExplosions() {
+		for (int i = 0; i < m_NumberExplosions; i++) {
+			m_Explosions[i].UpdateExplosion();
+		}
+	}
+
+	void ExplodeObject(float MaxVelocity, float MinVelocity) {
+		for (int i = 0; i < m_NumberExplosions; i++) {
+			m_Explosions[i].StartExplosion(m_Orientation.GetPosition(),
+					MaxVelocity, MinVelocity);
+		}
+	}
+
+	// Stats
+	Stats GetObjectStats() {
+		return m_ObjectStats;
+	}
+
+	void TakeDamage(Object3d DamageObj) {
+		int DamageAmount = DamageObj.GetObjectStats().GetDamageValue();
+		int Health = m_ObjectStats.GetHealth();
+
+		Health = Health - DamageAmount;
+
+		// Health can never be negative
+		if (Health < 0) {
+			Health = 0;
+		}
+		m_ObjectStats.SetHealth(Health);
+	}
+
+	// Collision
+	Physics.CollisionStatus CheckCollision(Object3d object) {
+		Physics.CollisionStatus result = m_Physics
+				.CheckForCollisionSphereBounding(this, object);
+		return result;
+	}
+
+	void ApplyLinearImpulse(Object3d object) {
+		m_Physics.ApplyLinearImpulse(this, object);
 	}
 
 	// Persistent State
@@ -105,8 +184,8 @@ public class Object3d {
 		m_Physics.SaveState(PhysicsHandle);
 
 		// Save Stats
-		// String StatsHandle = Handle + "Stats";
-		// m_ObjectStats.SaveStats(StatsHandle);
+		String StatsHandle = Handle + "Stats";
+		m_ObjectStats.SaveStats(StatsHandle);
 	}
 
 	void LoadObjectState(String Handle) {
@@ -124,8 +203,8 @@ public class Object3d {
 		m_Physics.LoadState(PhysicsHandle);
 
 		// Stats
-		// String StatsHandle = Handle + "Stats";
-		// m_ObjectStats.LoadStats(StatsHandle);
+		String StatsHandle = Handle + "Stats";
+		m_ObjectStats.LoadStats(StatsHandle);
 	}
 
 	public void CheckGLError(String glOperation) {
@@ -209,10 +288,9 @@ public class Object3d {
 
 	// Collision
 	float GetRadius() {
-		// if (m_Mesh != null)
-		// {
-		// return m_Mesh.GetRadius();
-		// }
+		if (m_Mesh != null) {
+			return m_Mesh.GetRadius();
+		}
 
 		if (m_MeshEx != null) {
 			return m_MeshEx.GetRadius();
@@ -263,7 +341,20 @@ public class Object3d {
 		// UpdatePolyParticleEmitter();
 
 		// Update Explosions associated with this object
-		// UpdateExplosions();
+		UpdateExplosions();
+	}
+
+	// Texture
+	// For Player Power Pyramid
+	void SetAnimateTextures(boolean iAnimate, float delay, int StartTexture,
+			int StopTexture) {
+		m_AnimateTextures = iAnimate;
+		m_StartTexAnimNum = StartTexture;
+		m_StopTexAnimNum = StopTexture;
+		m_TexAnimDelay = delay;
+		m_Counter = SystemClock.uptimeMillis() * 1 / 1000.0f; // Convert to
+																// seconds
+		m_TargetTime = m_Counter + m_TexAnimDelay;
 	}
 
 	boolean SetTexture(int TextureNumber) {
@@ -417,7 +508,9 @@ public class Object3d {
 		// Enable Hidden surface removal
 		GLES20.glEnable(GLES20.GL_DEPTH_TEST);
 
-		if (m_MeshEx != null) {
+		if (m_Mesh != null) {
+			m_Mesh.DrawMesh(m_PositionHandle, m_TextureHandle, m_NormalHandle);
+		} else if (m_MeshEx != null) {
 			m_MeshEx.DrawMesh(m_PositionHandle, m_TextureHandle, m_NormalHandle);
 		} else {
 			Log.d("class Object3d :", "No MESH in Object3d");
@@ -425,6 +518,8 @@ public class Object3d {
 	}
 
 	void DrawObject(Camera Cam, PointLight light) {
+
+		RenderExplosions(Cam, light);
 
 		// HUD
 		if (m_Blend) {

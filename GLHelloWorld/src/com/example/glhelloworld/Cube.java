@@ -49,10 +49,11 @@ public class Cube extends Object3d {
 
 	Cube(
 			Context iContext,
+			Mesh iMesh,
 			MeshEx iMeshEx,
 			Texture[] iTextures,
 			Material iMaterial,
 			Shader iShader) {
-		super(iContext, iMeshEx, iTextures, iMaterial, iShader);
+		super(iContext, iMesh, iMeshEx, iTextures, iMaterial, iShader);
 	}
 }

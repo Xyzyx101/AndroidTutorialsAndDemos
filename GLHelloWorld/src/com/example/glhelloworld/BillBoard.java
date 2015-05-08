@@ -5,11 +5,12 @@ import android.content.Context;
 public class BillBoard extends Cube {
 	BillBoard(
 			Context iContext,
+			Mesh iMesh,
 			MeshEx iMeshEx,
 			Texture[] iTextures,
 			Material iMaterial,
 			Shader iShader) {
-		super(iContext, iMeshEx, iTextures, iMaterial, iShader);
+		super(iContext, iMesh, iMeshEx, iTextures, iMaterial, iShader);
 
 		Vector3 Scale = new Vector3(1.0f, 1.0f, 0.1f);
 		m_Orientation.SetScale(Scale);

@@ -48,7 +48,7 @@ public class Orientation {
 		Matrix.setIdentityM(m_RotationMatrix, 0);
 	}
 
-	//Persistent Data
+	// Persistent Data
 	void SaveState(String handle) {
 		// We need an Editor object to make preference changes.
 		// All objects are from android.context.Context
@@ -256,6 +256,12 @@ public class Orientation {
 
 	void SetRotationAxis(Vector3 Axis) {
 		m_RotationAxis = Axis;
+	}
+
+	// Needed for Particles
+	void SetRotationAngle(float angle) {
+		m_RotationAngle = angle;
+		SetRotationMatrix(m_RotationAngle, m_RotationAxis);
 	}
 
 	void AddRotation(float AngleIncrementDegrees) {
