@@ -11,6 +11,8 @@ import android.content.Context;
 public class MainActivity extends Activity {
 
 	private MyGLSurfaceView m_GLView;
+	
+	static String SAVE_GAME_HANDLE = "CurrentGame";
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -26,10 +28,11 @@ public class MainActivity extends Activity {
 	@Override
 	protected void onPause() {
 		super.onPause();
-		m_GLView.onPause();
-
-		// Save State
-		m_GLView.CustomGLRenderer.SaveGameState();
+    	m_GLView.onPause();
+    	
+    	// Save State
+    	//m_GLView.CustomGLRenderer.SaveGameState();
+    	m_GLView.CustomGLRenderer.SaveGameState(SAVE_GAME_HANDLE);
 	}
 
 	@Override

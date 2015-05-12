@@ -329,4 +329,8 @@ public class Orientation {
 
 		return m_OrientationMatrix;
 	}
+
+	void ResetRotation() {
+		Matrix.setIdentityM(m_RotationMatrix, 0);
+	}
 }

@@ -23,9 +23,15 @@ public class Camera {
 	private Orientation m_Orientation = null;
 
 	Camera(Context context,
-			// Shader iShader,
-			Vector3 Eye, Vector3 Center, Vector3 Up, float Projleft,
-			float Projright, float Projbottom, float Projtop, float Projnear,
+	// Shader iShader,
+			Vector3 Eye,
+			Vector3 Center,
+			Vector3 Up,
+			float Projleft,
+			float Projright,
+			float Projbottom,
+			float Projtop,
+			float Projnear,
 			float Projfar) {
 		m_Orientation = new Orientation(context);
 
@@ -155,5 +161,13 @@ public class Camera {
 		CalculatePosition();
 
 		SetCameraView(m_Eye, m_Center, m_Up);
+	}
+
+	void LoadCameraState(String Handle) {
+		m_Orientation.LoadState(Handle);
+	}
+
+	void SaveCameraState(String Handle) {
+		m_Orientation.SaveState(Handle);
 	}
 }

@@ -15,6 +15,10 @@ import android.media.SoundPool;
 
 import android.content.SharedPreferences;
 
+enum GameState {
+	MainMenu, ActiveGamePlay, HighScoreTable, HighScoreEntry, GameOverScreen
+}
+
 public class MyGLRenderer implements GLSurfaceView.Renderer {
 	private Context m_Context;
 
@@ -83,8 +87,321 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
 	// Tank
 	private Tank m_Tank;
 
+	// User Interface
+	private GameState m_GameState = GameState.MainMenu;
+
+	// Menu
+	private MainMenu m_MainMenu;
+	private HighScoreEntryMenu m_HighScoreEntryMenu;
+
+	// HighScore Table
+	private HighScoreTable m_HighScoreTable;
+
+	private boolean m_CanContinue = false;
+
 	public MyGLRenderer(Context context) {
 		m_Context = context;
+	}
+
+	// High Score Table
+	BillBoard CreateInitBillBoard(Context iContext, int TextureResourceID,
+			Vector3 Position, Vector3 Scale) {
+		BillBoard NewBillBoard = null;
+
+		Texture BillBoardTexture = new Texture(iContext, TextureResourceID);
+
+		// Create Shader
+		Shader Shader = new Shader(iContext, R.raw.vsonelight, R.raw.fsonelight); // ok
+
+		// Create Debug Local Axis Shader
+		// Shader LocalAxisShader = m_LocalAxisShader; // new Shader(iContext,
+		// R.raw.vslocalaxis, R.raw.fslocalaxis);
+
+		// MeshEx(int CoordsPerVertex,
+		// int MeshVerticesDataPosOffset,
+		// int MeshVerticesUVOffset ,
+		// int MeshVerticesNormalOffset,
+		// float[] Vertices,
+		// short[] DrawOrder
+		MeshEx Mesh = new MeshEx(8, 0, 3, 5, Cube.CubeData, Cube.CubeDrawOrder);
+
+		// Create Material for this object
+		Material Material1 = new Material();
+		// Material1.SetEmissive(1.0f, 1.0f, 1.0f);
+
+		// Create Texture for BillBoard
+		Texture[] Tex = new Texture[1];
+		Tex[0] = BillBoardTexture;
+
+		// Create new BillBoard
+		NewBillBoard = new BillBoard(iContext, null, Mesh, Tex, Material1,
+				Shader// ,
+		// LocalAxisShader
+		);
+
+		// Set Initial Position and Orientation
+		NewBillBoard.m_Orientation.SetPosition(Position);
+
+		NewBillBoard.m_Orientation.SetScale(Scale);
+
+		NewBillBoard.GetObjectPhysics().SetGravity(false);
+
+		return NewBillBoard;
+	}
+
+	void CreateHighScoreTable(Context iContext) {
+		int TextureResourceID = R.drawable.background;
+		Vector3 Position = new Vector3(0.5f, 1, -7f);
+		Vector3 Scale = new Vector3(4.5f, 5, 1);
+
+		BillBoard HighScoreTableImage = CreateInitBillBoard(iContext,
+				TextureResourceID, Position, Scale);
+
+		m_HighScoreTable = new HighScoreTable(iContext, m_CharacterSet,
+				HighScoreTableImage);
+
+		String Initials = "rob1";
+		int Score = 111;
+		HighScoreEntry Entry1 = new HighScoreEntry(Initials, Score);
+		boolean result = m_HighScoreTable.AddItem(Entry1);
+
+		Initials = "rob2";
+		Score = 222;
+		HighScoreEntry Entry2 = new HighScoreEntry(Initials, Score);
+		result = m_HighScoreTable.AddItem(Entry2);
+
+		Initials = "rob3";
+		Score = 333;
+		HighScoreEntry Entry3 = new HighScoreEntry(Initials, Score);
+		result = m_HighScoreTable.AddItem(Entry3);
+
+		Initials = "rob4";
+		Score = 444;
+		HighScoreEntry Entry4 = new HighScoreEntry(Initials, Score);
+		result = m_HighScoreTable.AddItem(Entry4);
+
+		Initials = "rob5";
+		Score = 555;
+		HighScoreEntry Entry5 = new HighScoreEntry(Initials, Score);
+		result = m_HighScoreTable.AddItem(Entry5);
+
+		Initials = "rob6";
+		Score = 666;
+		HighScoreEntry Entry6 = new HighScoreEntry(Initials, Score);
+		result = m_HighScoreTable.AddItem(Entry6);
+
+		Initials = "rob7";
+		Score = 777;
+		HighScoreEntry Entry7 = new HighScoreEntry(Initials, Score);
+		result = m_HighScoreTable.AddItem(Entry7);
+
+		Initials = "rob8";
+		Score = 888;
+		HighScoreEntry Entry8 = new HighScoreEntry(Initials, Score);
+		result = m_HighScoreTable.AddItem(Entry8);
+
+		Initials = "rob9";
+		Score = 999;
+		HighScoreEntry Entry9 = new HighScoreEntry(Initials, Score);
+		result = m_HighScoreTable.AddItem(Entry9);
+
+		Initials = "rob10";
+		Score = 1000;
+		HighScoreEntry Entry10 = new HighScoreEntry(Initials, Score);
+		result = m_HighScoreTable.AddItem(Entry10);
+
+		Initials = "rob11";
+		Score = 1100;
+		HighScoreEntry Entry11 = new HighScoreEntry(Initials, Score);
+		result = m_HighScoreTable.AddItem(Entry11);
+
+		if (result == false) {
+			Log.e("RENDERER", "ADDITEM ENTRY1 FAILED TO HIGH SCORE TABLE");
+		}
+
+	}
+
+	void CreateHighScoreEntryMenu(Context iContext) {
+
+		// Create High Score Entry Menu Billboard
+		int TextureResourceID = R.drawable.backgroundentrymenu;
+		Vector3 Position = new Vector3(0.0f, 1, -5);
+		Vector3 Scale = new Vector3(4.5f, 5, 1);
+
+		BillBoard HighScoreEntryMenuImage = CreateInitBillBoard(iContext,
+				TextureResourceID, Position, Scale);
+
+		// Create Menu Buttons
+		Shader ObjectShader = new Shader(iContext, R.raw.vsonelight,
+				R.raw.fsonelight); // ok
+		// Shader LocalAxisShader = new Shader(iContext, R.raw.vslocalaxis,
+		// R.raw.fslocalaxis);
+
+		MeshEx MenuItemMeshEx = new MeshEx(8, 0, 3, 5, Cube.CubeData,
+				Cube.CubeDrawOrder);
+		Mesh MenuItemMesh = null;
+
+		// Create Material for this object
+		Material Material1 = new Material();
+		Material1.SetEmissive(0.3f, 0.3f, 0.3f);
+
+		// Create Texture
+		int NumberTextures = 1;
+		Texture TexNextButton = new Texture(iContext, R.drawable.nextbutton);
+
+		Texture[] Tex = new Texture[NumberTextures];
+		Tex[0] = TexNextButton;
+
+		boolean AnimateTextures = false;
+		float TimeDelay = 0.0f;
+
+		Position = new Vector3(-1.0f, 1.3f, -4.25f);
+		Scale = new Vector3(1.4f, 1.0f, 1.0f);
+
+		// Next Character Button
+		MenuItem NextCharacterButton = CreateMenuItem(iContext, MenuItemMesh,
+				MenuItemMeshEx, Material1, NumberTextures, Tex,
+				AnimateTextures, TimeDelay, Position, Scale, ObjectShader// ,
+		// LocalAxisShader
+		);
+
+		// Previous Character Button
+		Position = new Vector3(0.5f, 1.3f, -4.25f);
+		Texture TexPreviousGameButton = new Texture(iContext,
+				R.drawable.previousbutton);
+		Tex = new Texture[NumberTextures];
+		Tex[0] = TexPreviousGameButton;
+
+		MenuItem PreviousCharacterButton = CreateMenuItem(iContext,
+				MenuItemMesh, MenuItemMeshEx, Material1, NumberTextures, Tex,
+				AnimateTextures, TimeDelay, Position, Scale, ObjectShader// ,
+		// LocalAxisShader
+		);
+
+		// Enter Button
+		Position = new Vector3(0.0f, 0.0f, -4.25f);
+		Texture TexEnterButton = new Texture(iContext, R.drawable.enterbutton);
+		Tex = new Texture[NumberTextures];
+		Tex[0] = TexEnterButton;
+		Scale = new Vector3(3.0f, 1.0f, 1.0f);
+
+		MenuItem EnterButton = CreateMenuItem(iContext, MenuItemMesh,
+				MenuItemMeshEx, Material1, NumberTextures, Tex,
+				AnimateTextures, TimeDelay, Position, Scale, ObjectShader// ,
+		// LocalAxisShader
+		);
+
+		int StartingEntryXPos = 168;
+		int StartingEntryYPos = 100;
+
+		m_HighScoreEntryMenu = new HighScoreEntryMenu(NextCharacterButton,
+				PreviousCharacterButton, EnterButton, m_CharacterSet,
+				HighScoreEntryMenuImage, StartingEntryXPos, StartingEntryYPos);
+
+	}
+
+	// Menu
+	MenuItem CreateMenuItem(Context iContext, Mesh MenuItemMesh,
+			MeshEx MenuItemMeshEx, Material Material1, int NumberTextures,
+			Texture[] Tex, boolean AnimateTextures, float TimeDelay,
+			Vector3 Position, Vector3 Scale, Shader ObjectShader// ,
+
+	// Shader LocalAxisShader
+	) {
+		MenuItem NewMenuItem = null;
+
+		NewMenuItem = new MenuItem(iContext, MenuItemMesh, MenuItemMeshEx, Tex,
+				Material1, ObjectShader// ,
+		// LocalAxisShader
+		);
+		NewMenuItem.SetAnimateTextures(AnimateTextures, TimeDelay, 0,
+				NumberTextures - 1);
+
+		NewMenuItem.m_Orientation.SetPosition(Position);
+		NewMenuItem.m_Orientation.SetScale(Scale);
+		NewMenuItem.GetObjectPhysics().SetGravity(false);
+
+		return NewMenuItem;
+	}
+
+	void CreateMainMenu(Context iContext) {
+		// Create New Game Button
+		Shader ObjectShader = new Shader(iContext, R.raw.vsonelight,
+				R.raw.fsonelight); // ok
+		// Shader LocalAxisShader = new Shader(iContext, R.raw.vslocalaxis,
+		// R.raw.fslocalaxis);
+
+		MeshEx MenuItemMeshEx = new MeshEx(8, 0, 3, 5, Cube.CubeData,
+				Cube.CubeDrawOrder);
+		Mesh MenuItemMesh = null;
+
+		// Create Material for this object
+		Material Material1 = new Material();
+
+		// Create Texture
+		int NumberTextures = 1;
+		Texture TexNewGameButton = new Texture(iContext,
+				R.drawable.newgamebutton);
+
+		Texture[] Tex = new Texture[NumberTextures];
+		Tex[0] = TexNewGameButton;
+
+		boolean AnimateTextures = false;
+		float TimeDelay = 0.0f;
+
+		Vector3 Position = new Vector3(0.0f, 2.5f, -7.25f);
+		Vector3 Scale = new Vector3(3.0f, 1.0f, 1.0f);
+		
+		MenuItem NewGameMenuItem = CreateMenuItem(iContext, MenuItemMesh,
+				MenuItemMeshEx, Material1, NumberTextures, Tex,
+				AnimateTextures, TimeDelay, Position, Scale, ObjectShader// ,
+		// LocalAxisShader
+		);
+
+		// Continue Game
+		Position = new Vector3(0.0f, 1.3f, -7.25f);
+		Texture TexContinueGameButton = new Texture(iContext,
+				R.drawable.continuegamebutton);
+		Tex = new Texture[NumberTextures];
+		Tex[0] = TexContinueGameButton;
+
+		MenuItem ContinueGameMenuItem = CreateMenuItem(iContext, MenuItemMesh,
+				MenuItemMeshEx, Material1, NumberTextures, Tex,
+				AnimateTextures, TimeDelay, Position, Scale, ObjectShader// ,
+
+		// LocalAxisShader
+		);
+
+		// View High Scores
+		Position = new Vector3(0.0f, 0.0f, -7.25f);
+		Texture TexHighScoresButton = new Texture(iContext,
+				R.drawable.highscoresbutton);
+		Tex = new Texture[NumberTextures];
+		Tex[0] = TexHighScoresButton;
+
+		MenuItem HighScoreMenuItem = CreateMenuItem(iContext, MenuItemMesh,
+				MenuItemMeshEx, Material1, NumberTextures, Tex,
+				AnimateTextures, TimeDelay, Position, Scale, ObjectShader// ,
+		// LocalAxisShader
+		);
+
+		// CopyRight Notice
+		Position = new Vector3(0.0f, -1.3f, -7.25f);
+		Texture TexCopyrightButton = new Texture(iContext, R.drawable.copyright);
+		Tex = new Texture[NumberTextures];
+		Tex[0] = TexCopyrightButton;
+		Material Material2 = new Material();
+		Material2.SetEmissive(0.3f, 0.3f, 0.3f);
+
+		MenuItem CopyrightMenuItem = CreateMenuItem(iContext, MenuItemMesh,
+				MenuItemMeshEx, Material2, NumberTextures, Tex,
+				AnimateTextures, TimeDelay, Position, Scale, ObjectShader// ,
+		// LocalAxisShader
+		);
+
+		m_MainMenu = new MainMenu(NewGameMenuItem, ContinueGameMenuItem,
+				HighScoreMenuItem, CopyrightMenuItem);
+
 	}
 
 	public void PyramidCreateTexture(Context context) {
@@ -717,7 +1034,87 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
 	}
 
 	void CheckTouch() {
+		// Main Menu
+		if (m_GameState == GameState.MainMenu) {
+			// Reset camera to face main menu
+			MenuStates result = m_MainMenu.GetMainMenuStatus(m_TouchX,
+					m_TouchY, m_ViewPortWidth, m_ViewPortHeight);
 
+			Log.e("CHECKTOUCH", "TOUCHED MAIN MENU!!!!!! ");
+			if (result == MenuStates.NewGame) {
+				Log.e("CHECKTOUCH", "NEW GAME MENU ITEM SELECTED!!!!!! ");
+				ResetGame();
+				m_GameState = GameState.ActiveGamePlay;
+			} else if (result == MenuStates.ContinueCurrentGame) {
+				Log.e("CHECKTOUCH", "CONTINUE GAME MENU ITEM SELECTED!!!!!! ");
+
+				LoadContinueStatus(MainActivity.SAVE_GAME_HANDLE);
+				if (m_CanContinue) {
+					LoadGameState(MainActivity.SAVE_GAME_HANDLE);
+				} else {
+					ResetGame();
+				}
+
+				m_GameState = GameState.ActiveGamePlay;
+			} else if (result == MenuStates.HighScoreTable) {
+				Log.e("CHECKTOUCH", "HIGH SCORE MENU ITEM SELECTED!!!!!! ");
+				m_GameState = GameState.HighScoreTable;
+			} else if (result == MenuStates.Copyright) {
+				Log.e("CHECKTOUCH", "CopyRight MENU ITEM SELECTED!!!!!! ");
+				m_GameState = GameState.HighScoreEntry;
+			}
+
+			return;
+		} else if (m_GameState == GameState.HighScoreTable) {
+			m_GameState = GameState.MainMenu;
+			return;
+		} else if (m_GameState == GameState.HighScoreEntry) {
+
+			// If User presses finished button from High Score Entry Menu
+			EntryMenuStates result = m_HighScoreEntryMenu.GetEntryMenuStatus(
+					m_TouchX, m_TouchY, m_ViewPortWidth, m_ViewPortHeight);
+
+			if (result == EntryMenuStates.NextCharacterPressed) {
+				Log.e("CHECKTOUCH", "Next MENU ITEM SELECTED!!!!!! ");
+				m_HighScoreEntryMenu.ProcessNextMenuSelection();
+			} else if (result == EntryMenuStates.PreviousCharacterPressed) {
+				Log.e("CHECKTOUCH", "Previous MENU ITEM SELECTED!!!!!! ");
+				m_HighScoreEntryMenu.ProcessPreviousMenuSelection();
+			} else if (result == EntryMenuStates.Enter) {
+				Log.e("CHECKTOUCH", "ENTER MENU ITEM SELECTED!!!!!! ");
+				m_HighScoreEntryMenu.ProcessEnterMenuSelection();
+
+				if (m_HighScoreEntryMenu.IsEntryFinished()) {
+					char[] Initials = m_HighScoreEntryMenu.GetEntry();
+					String StrInitials = new String(Initials);
+
+					CreateHighScoreEntry(StrInitials, m_Score);
+
+					m_GameState = GameState.HighScoreTable;
+					m_HighScoreEntryMenu.ResetMenu();
+				}
+			}
+
+			return;
+		} else if (m_GameState == GameState.GameOverScreen) {
+
+			/*
+			 * long CurTime = System.currentTimeMillis(); long Delay = CurTime -
+			 * m_GameOverStartTime;
+			 * 
+			 * if (Delay < m_GameOverPauseTime) { return; }
+			 * 
+			 * // Test for High Score if (IsNewHighScore()) { // Go to High
+			 * Score Entry Screen m_GameState = GameState.HighScoreEntry; } else
+			 * { m_GameState = GameState.MainMenu; } ResetCamera();
+			 * 
+			 * // Can not continue further since game is now over m_CanContinue
+			 * = false;
+			 * SaveContinueStatus(RobsGL20TutorialActivity.SAVE_GAME_HANDLE);
+			 */
+
+			return;
+		}
 		// Player Weapon Firing
 		int[] View = new int[4];
 
@@ -743,6 +1140,43 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
 		}
 	}
 
+	// High Score
+	void CreateHighScoreEntry(String Initials, int Score) {
+		HighScoreEntry Entry = new HighScoreEntry(Initials, Score);
+		m_HighScoreTable.AddItem(Entry);
+	}
+
+	void ResetCamera() {
+		m_Camera.GetOrientation().SetRotationAngle(0);
+		m_Camera.GetOrientation().ResetRotation();
+	}
+
+	void ResetGame() {
+		// Game is now reset so player can continue
+		m_CanContinue = true;
+
+		// Resets Player's Weapon
+		m_Weapon.ResetWeapon();
+
+		// Resets the game to the beginning state
+		ResetCamera();
+
+		// Resets Player's Score to 0
+		m_Score = 0;
+
+		// Resets Power Pyramid's Health to 0
+		m_Pyramid.GetObjectStats().SetHealth(100);
+
+		// Reset Enemy Objects
+		// m_ArenaObjectsSet.ResetSet();
+		// m_AirVehicleFleet.ResetSet();
+		// m_TankFleet.ResetSet();
+
+		// Reset Game Controller
+		// m_GamePlayController.ResetController();
+
+	}
+
 	// Persistent State
 	void SaveCubes() {
 		m_Cube.SaveObjectState("Cube1Data");
@@ -754,36 +1188,92 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
 		m_Cube2.LoadObjectState("Cube2Data");
 	}
 
-	void LoadGameState() {
-		// Restore preferences
-		SharedPreferences settings = m_Context.getSharedPreferences(
-				"gamestate", 0);
+	void LoadContinueStatus(String Handle) {
+		SharedPreferences settings = m_Context.getSharedPreferences(Handle, 0);
 
-		int StatePreviouslySaved = settings.getInt("previouslysaved", 0);
-
-		if (StatePreviouslySaved != 0) {
-			// Load in previously saved state
-			m_Score = settings.getInt("score", 0);
-			m_Health = settings.getInt("health", 100);
-
-			LoadCubes();
-		}
+		m_CanContinue = settings.getBoolean("CanContinue", false);
 	}
 
-	void SaveGameState() {
+	void LoadGameState(String Handle) {
+		// Load game state of last game that was inturrupted during play
+
+		// Restore preferences
+		SharedPreferences settings = m_Context.getSharedPreferences(Handle, 0);
+
+		// Load In Player Score
+		m_Score = settings.getInt("Score", 0);
+
+		// Load in Player's Health
+		int Health = settings.getInt("Health", 100);
+		m_Pyramid.GetObjectStats().SetHealth(Health);
+
+		// Can Continue
+		m_CanContinue = settings.getBoolean("CanContinue", false);
+
+		// Health Display Status
+		// m_BonusGiven = settings.getBoolean("m_BonusGiven", false);
+		// m_TimeHealthBonusDisplayStart =
+		// settings.getLong("m_TimeHealthBonusDisplayStart", 0);
+		// m_DisplayHealthBonus = settings.getBoolean("m_DisplayHealthBonus",
+		// false);
+
+		// Camera
+		m_Camera.LoadCameraState("Camera");
+
+		// Arena Objects Set
+		// m_ArenaObjectsSet.LoadSet(ARENA_OBJECTS_HANDLE);
+		m_Cube.LoadObjectState("m_Cube");
+
+		// AirFleet
+		// m_AirVehicleFleet.LoadSet(AIR_VEHICLE_HANDLE);
+
+		// Tank Fleet
+		// m_TankFleet.LoadSet(TANK_FLEET_HANDLE);
+		m_Tank.LoadTankState("m_Tank");
+	}
+
+	void SaveGameState(String handle) {
+		// Only save game state when game is active and being played not at
+		// menu or high score table etc.
+		if (m_GameState != GameState.ActiveGamePlay) {
+			return;
+		}
+
 		// We need an Editor object to make preference changes.
-		SharedPreferences settings = m_Context.getSharedPreferences(
-				"gamestate", 0);
+		SharedPreferences settings = m_Context.getSharedPreferences(handle, 0);
 		SharedPreferences.Editor editor = settings.edit();
 
-		editor.putInt("score", m_Score);
-		editor.putInt("health", m_Health);
+		// Player's Score
+		editor.putInt("Score", m_Score);
 
-		SaveCubes();
-		editor.putInt("previouslysaved", 1);
+		// Player's Health
+		editor.putInt("Health", m_Pyramid.GetObjectStats().GetHealth());
+
+		// Can Continue Game
+		editor.putBoolean("CanContinue", m_CanContinue);
+
+		// Health Display Status
+		// editor.putBoolean("m_BonusGiven", m_BonusGiven);
+		// editor.putLong("m_TimeHealthBonusDisplayStart",
+		// m_TimeHealthBonusDisplayStart);
+		// editor.putBoolean("m_DisplayHealthBonus", m_DisplayHealthBonus);
 
 		// Commit the edits!
 		editor.commit();
+
+		// Camera
+		m_Camera.SaveCameraState("Camera");
+
+		// Arena Objects Set
+		// m_ArenaObjectsSet.SaveSet(ARENA_OBJECTS_HANDLE);
+		m_Cube.SaveObjectState("m_Cube");
+
+		// AirFleet
+		// m_AirVehicleFleet.SaveSet(AIR_VEHICLE_HANDLE);
+
+		// Tank Fleet
+		// m_TankFleet.SaveSet(TANK_FLEET_HANDLE);
+		m_Tank.SaveTankState("m_Tank");
 	}
 
 	// HUD
@@ -1535,6 +2025,16 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
 
 		// Create The Tanks
 		CreateTanks();
+
+		// Main Menu
+		CreateMainMenu(m_Context);
+		m_GameState = GameState.MainMenu;
+
+		// Create High Score Table
+		CreateHighScoreTable(m_Context);
+
+		// Create High Score Entry Menu
+		CreateHighScoreEntryMenu(m_Context);
 	}
 
 	@Override
@@ -1554,13 +2054,45 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
 		GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		GLES20.glClear(GLES20.GL_DEPTH_BUFFER_BIT | GLES20.GL_COLOR_BUFFER_BIT);
 
-		// Player Update
-		ProcessCollisions();
 		if (m_CameraMoved) {
 			ProcessCameraMove();
 		}
-
 		m_Camera.UpdateCamera();
+
+		// Did user touch screen
+		if (m_ScreenTouched) {
+			// Process Screen Touch
+			CheckTouch();
+			m_ScreenTouched = false;
+		}
+
+		// Main Menu
+		if (m_GameState == GameState.MainMenu) {
+			m_MainMenu.UpdateMenu(m_Camera);
+			m_MainMenu.RenderMenu(m_Camera, m_PointLight, false);
+			return;
+		}
+
+		// High Score Table
+		if (m_GameState == GameState.HighScoreTable) {
+			// Log.e("DRAWFRAME", "HIGHSCORETABLE");
+			m_HighScoreTable.UpdateHighScoreTable(m_Camera);
+			m_HighScoreTable
+					.RenderHighScoreTable(m_Camera, m_PointLight, false);
+			return;
+		}
+
+		// High Score Entry
+		if (m_GameState == GameState.HighScoreEntry) {
+			// Update HighScore Entry Table
+			m_HighScoreEntryMenu.UpdateHighScoreEntryMenu(m_Camera);
+			m_HighScoreEntryMenu.RenderHighScoreEntryMenu(m_Camera,
+					m_PointLight, false);
+			return;
+		}
+
+		// Player Update
+		ProcessCollisions();
 
 		// Update Object Physics
 		// Cube1

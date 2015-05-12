@@ -136,8 +136,8 @@ public class Shader {
 		InitFragmentShader(FSResourceId);
 		GLES20.glLinkProgram(m_ShaderProgram);
 	
-		String DebugInfo = GLES20.glGetProgramInfoLog(m_ShaderProgram);
-		Log.d("DEBUG - SHADER LINK INFO ", DebugInfo);
+		//String DebugInfo = GLES20.glGetProgramInfoLog(m_ShaderProgram);
+		//Log.d("DEBUG - SHADER LINK INFO ", DebugInfo);
 	
 		//String	ShaderInfo =  GLES20.glGetShaderInfoLog(m_ShaderProgram);
 		//Log.d("DEBUG - SHADER COMPILE INFO ", ShaderInfo);

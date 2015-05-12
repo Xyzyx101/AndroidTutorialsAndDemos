@@ -68,6 +68,9 @@ public class Object3d {
 	private int m_NumberExplosions = 0;
 	private SphericalPolygonExplosion[] m_Explosions = new SphericalPolygonExplosion[MAX_EXPLOSIONS];
 
+	// For User Interface
+	private float[] m_ProjMatrix = new float[16];
+
 	Object3d(
 			Context iContext,
 			Mesh iMesh,
@@ -95,6 +98,39 @@ public class Object3d {
 
 		// Initialize Object Stats
 		m_ObjectStats = new Stats(iContext);
+	}
+
+	float[] MapObjectCoordsToWindowCoords(int[] View, int ViewOffset,
+			Vector3 ObjOffset) {
+		// Map object coordinates into window coordinates. gluProject transforms
+		// the specified object
+		// coordinates into window coordinates using model, proj, and view. The
+		// result is stored in win.
+		float[] WindowCoords = new float[3];
+		int result = 0;
+
+		// Android gluProject declaration
+		// public static int gluProject (float objX, float objY, float objZ,
+		// float[] model, int modelOffset,
+		// float[] project, int projectOffset,
+		// int[] view, int viewOffset,
+		// float[] win, int winOffset)
+		result = GLU.gluProject(ObjOffset.x, ObjOffset.y, ObjOffset.z,
+				m_ModelViewMatrix, 0, m_ProjMatrix, 0, View, ViewOffset,
+				WindowCoords, 0);
+		CheckGLError("gluProject");
+
+		if (result == GLES20.GL_FALSE) {
+			Log.e("class Object3d::MapObjectCoordsToWindowCoords()",
+					"ERROR = GLU.gluProject failed!!!");
+			Log.e("View = ", View[0] + "," + View[1] + ", " + View[2] + ", "
+					+ View[3]);
+		} else {
+			// Log.d("DEBUG - In GetWindowCoordsObject-> GLUPROJECT",
+			// "WindowCoords(x,y,z) = " +
+			// WindowCoords[0] + "," + WindowCoords[1]+ "," + WindowCoords[2]);
+		}
+		return WindowCoords;
 	}
 
 	Context GetContext() {
@@ -497,6 +533,9 @@ public class Object3d {
 		// Create Model View Projection Matrix
 		Matrix.multiplyMM(m_MVPMatrix, 0, Cam.GetProjectionMatrix(), 0,
 				m_ModelViewMatrix, 0);
+
+		// Save a Copy of the Projection Matrix
+		m_ProjMatrix = Cam.GetProjectionMatrix().clone();
 	}
 
 	void DrawObject(Camera Cam, PointLight light, Vector3 iPosition,
